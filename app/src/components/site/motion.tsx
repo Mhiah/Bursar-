@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+export const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** True once the element has scrolled into view. */
 export function useSeen<T extends HTMLElement>(threshold = 0.2) {
@@ -24,6 +24,18 @@ export function useSeen<T extends HTMLElement>(threshold = 0.2) {
     return () => io.disconnect();
   }, [threshold]);
   return [ref, seen] as const;
+}
+
+/** A counter that goes up every `ms` while `on`, for looping illustrations. Stays at `still` with reduced motion. */
+export function useTick(on: boolean, ms: number, still = 0) {
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    if (!on) return;
+    if (reduced()) return setT(still);
+    const id = setInterval(() => setT((x) => x + 1), ms);
+    return () => clearInterval(id);
+  }, [on, ms, still]);
+  return t;
 }
 
 /** Fades and lifts its children in the first time they scroll into view. */

@@ -27,8 +27,8 @@ export function PayMock() {
     return () => clearInterval(t);
   }, [seen]);
   return (
-    <div ref={ref} className="mx-auto w-[290px] rounded-[38px] border-[7px] border-site-deep bg-site-bg p-4 shadow-[0_30px_60px_-30px_rgba(17,35,26,0.5)]">
-      <div className="mx-auto mb-3 h-1.5 w-16 rounded-full bg-site-deep/80" />
+    <div ref={ref} className="mx-auto w-[290px] rounded-[38px] border-[7px] border-site-main bg-site-bg p-4 shadow-[0_30px_60px_-30px_rgba(29,58,110,0.45)]">
+      <div className="mx-auto mb-3 h-1.5 w-16 rounded-full bg-site-main/80" />
       <p className="text-[12px] text-site-muted">Test Bakery asks for payment</p>
       <p className="font-head text-[34px] font-bold leading-tight text-site-ink">
         300.00 <span className="text-sm font-semibold text-site-muted">USDC</span>
@@ -39,16 +39,16 @@ export function PayMock() {
       </div>
       <div className="mt-3 space-y-1.5">
         {methods.map(([t, s], i) => (
-          <div key={t} className={`flex items-center justify-between rounded-xl px-3 py-2 transition-all duration-300 ${m === i ? "border-[1.5px] border-site-green bg-site-mint" : "border border-site-line bg-white"}`}>
+          <div key={t} className={`flex items-center justify-between rounded-xl px-3 py-2 transition-all duration-300 ${m === i ? "border-[1.5px] border-site-main bg-site-soft" : "border border-site-line bg-white"}`}>
             <span>
               <span className="block text-[12px] font-semibold text-site-ink">{t}</span>
               <span className="text-[10px] text-site-muted">{s}</span>
             </span>
-            <span className={`h-3.5 w-3.5 rounded-full transition-all duration-300 ${m === i ? "border-[4px] border-site-green" : "border border-site-line"}`} />
+            <span className={`h-3.5 w-3.5 rounded-full transition-all duration-300 ${m === i ? "border-[4px] border-site-main" : "border border-site-line"}`} />
           </div>
         ))}
       </div>
-      <div className={`mt-3 rounded-full py-2.5 text-center text-[12px] font-semibold text-white transition-colors duration-300 ${paid ? "bg-site-green" : "bg-site-deep"}`}>
+      <div className={`mt-3 rounded-full py-2.5 text-center text-[12px] font-semibold text-white transition-colors duration-300 ${paid ? "bg-site-maindark" : "bg-site-main"}`}>
         {paid ? "✓ Paid, thank you" : "Pay 300.00"}
       </div>
       <p className="mt-2 text-center text-[10px] text-site-muted">Goes straight to their vault. Bursar never holds it.</p>

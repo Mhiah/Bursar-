@@ -46,21 +46,27 @@ body {
   transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .site-reveal.is-in { opacity: 1; transform: none; }
-.site-grid {
-  background-color: #eef4ea;
-  background-image: linear-gradient(#dde8d7 1px, transparent 1px), linear-gradient(90deg, #dde8d7 1px, transparent 1px);
-  background-size: 22px 22px;
-}
-@keyframes site-pulse { 0% { box-shadow: 0 0 0 0 rgba(30, 122, 76, 0.45); } 100% { box-shadow: 0 0 0 7px rgba(30, 122, 76, 0); } }
+@keyframes site-pulse { 0% { box-shadow: 0 0 0 0 rgba(29, 58, 110, 0.45); } 100% { box-shadow: 0 0 0 7px rgba(29, 58, 110, 0); } }
 .site-live { animation: site-pulse 1.6s ease-out infinite; }
 @keyframes site-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .site-in { opacity: 0; animation: site-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
 @keyframes site-stamp { 0% { opacity: 0; transform: scale(1.6) rotate(-14deg); } 100% { opacity: 1; transform: scale(1) rotate(-8deg); } }
 .site-stamp { opacity: 0; animation: site-stamp 0.45s 0.6s cubic-bezier(0.3, 1.4, 0.5, 1) forwards; }
-@keyframes site-dash { to { stroke-dashoffset: -24; } }
-.site-flow { stroke-dasharray: 4 8; animation: site-dash 1s linear infinite; }
+@keyframes site-dot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-3px); opacity: 1; } }
+.site-dot { animation: site-dot 0.9s ease-in-out infinite; }
+@keyframes site-scan { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+.site-scan { animation: site-scan 0.9s ease-in-out forwards; }
+@keyframes site-travel { 0% { left: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { left: calc(100% - 7px); opacity: 0; } }
+.site-travel { animation: site-travel 1.8s ease-in-out infinite; }
+@keyframes site-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.site-fill { transform-origin: left; animation: site-fill linear forwards; }
 @media (prefers-reduced-motion: reduce) {
   .site-reveal { opacity: 1; transform: none; transition: none; }
-  .site-live, .site-flow { animation: none; }
+  .site-live, .site-dot, .site-travel { animation: none; }
+  .site-scan { display: none; }
+  .site-fill { animation: none; transform: none; }
   .site-in, .site-stamp { opacity: 1; animation: none; }
 }
+@keyframes site-dial { from { transform: rotate(-120deg); } to { transform: rotate(60deg); } }
+.site-dial { animation: site-dial 1.6s cubic-bezier(0.3, 0.8, 0.3, 1) forwards; }
+@media (prefers-reduced-motion: reduce) { .site-dial { animation: none; } }
