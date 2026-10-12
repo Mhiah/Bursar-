@@ -19,4 +19,4 @@ set("NEXT_PUBLIC_AGENT_ADDRESS", w.address);
 set("AGENT_PRIVATE_KEY", w.privateKey);
 fs.writeFileSync(file, env);
 console.log(`Agent wallet: ${w.address}`);
-console.log("Saved to app/.env.local. Send it a little testnet USDC from https://faucet.circle.com for gas.");
+console.log("Saved to app/.env.local. Send it a little USDC on Arc for fees.");
