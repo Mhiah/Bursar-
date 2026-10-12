@@ -16,9 +16,9 @@ export default function Invoices() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-semibold">Invoices</h1>
+      <h1 className="h-page">Invoices</h1>
       <section className="card space-y-4">
-        <h2 className="font-semibold">New invoice</h2>
+        <h2 className="h-section">New invoice</h2>
         {customers.data && !customers.data.customers.length && <Notice>Add a customer first on the Customers page.</Notice>}
         <div className="grid gap-3 md:grid-cols-5">
           <Field label="Customer">
@@ -79,7 +79,7 @@ export default function Invoices() {
                 <td>{r.customer_name}</td>
                 <td>
                   {r.invoice_no}
-                  {r.instalments && <p className="text-xs text-black/50">{r.instalments.length} instalments left</p>}
+                  {r.instalments && <p className="text-xs text-muted">{r.instalments.length} instalments left</p>}
                 </td>
                 <td><Money value={r.amount} /></td>
                 <td><Money value={r.paid_amount} /></td>
@@ -98,7 +98,7 @@ export default function Invoices() {
                         {copied === r.id ? "Copied" : "Copy pay link"}
                       </button>
                       <button
-                        className="ml-3 text-xs text-black/50"
+                        className="ml-3 text-xs text-muted"
                         onClick={() => act.run(async () => { await api(`/api/requests/${r.id}`, { method: "PATCH", json: { action: "cancel" } }); await reqs.reload(); })}
                       >
                         Cancel
@@ -110,13 +110,13 @@ export default function Invoices() {
             ))}
           </tbody>
         </table>
-        {!reqs.data?.requests.length && <p className="pt-3 text-sm text-black/50">No invoices yet.</p>}
+        {!reqs.data?.requests.length && <p className="pt-3 text-sm text-muted">No invoices yet.</p>}
       </section>
 
       {!!reqs.data?.unmatched.length && (
         <section className="card space-y-3">
-          <h2 className="font-semibold">Payments we couldn't match</h2>
-          <p className="text-sm text-black/60">Money arrived but it isn't clear which invoice it's for. The agent will try; you can match it yourself.</p>
+          <h2 className="h-section">Payments we couldn't match</h2>
+          <p className="text-sm text-muted">Money arrived but it isn't clear which invoice it's for. The agent will try; you can match it yourself.</p>
           <table className="table">
             <tbody>
               {reqs.data.unmatched.map((p) => (

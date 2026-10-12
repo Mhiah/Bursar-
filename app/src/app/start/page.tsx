@@ -35,14 +35,14 @@ export default function Start() {
   }, [w.address, session]);
 
   return (
-    <div className="mx-auto max-w-xl px-6 py-12">
-      <Link href="/" className="text-lg font-semibold tracking-tight">
+    <div className="mx-auto max-w-xl px-6 py-10">
+      <Link href="/" className="font-serif text-2xl text-ink no-underline">
         Bursar
       </Link>
-      <ol className="mb-8 mt-6 flex gap-2 text-xs">
+      <ol className="mb-10 mt-6 flex flex-wrap gap-x-5 gap-y-2 border-b border-rule pb-4 font-mono text-xs uppercase tracking-widest">
         {(["wallet", "signin", "details", "vault"] as Step[]).map((s, i) => (
-          <li key={s} className={`rounded-full px-3 py-1 ${s === step ? "bg-brand text-white" : "bg-black/5 text-black/50"}`}>
-            {i + 1}. {{ wallet: "Wallet", signin: "Sign in", details: "Business", vault: "Vault" }[s]}
+          <li key={s} className={s === step ? "text-ink" : "text-muted"}>
+            <span className={s === step ? "text-clay" : ""}>{String(i + 1).padStart(2, "0")}</span> {{ wallet: "Wallet", signin: "Sign in", details: "Business", vault: "Vault" }[s]}
           </li>
         ))}
       </ol>
@@ -66,14 +66,14 @@ function WalletStep() {
   if (phrase)
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">Write down your recovery phrase</h1>
+        <h1 className="h-page">Write down your recovery phrase</h1>
         <Notice kind="warn">
           This is the only way back into your wallet. Bursar doesn't keep a copy and can't recover it. Anyone who has it can take your money.
         </Notice>
-        <div className="grid grid-cols-3 gap-2 rounded-lg border border-black/10 bg-white p-4 font-mono text-sm">
+        <div className="grid grid-cols-3 gap-2 rounded-lg border border-rule bg-card p-4 font-mono text-sm">
           {phrase.split(" ").map((word, i) => (
             <span key={i}>
-              <span className="text-black/40">{i + 1}.</span> {word}
+              <span className="text-muted">{i + 1}.</span> {word}
             </span>
           ))}
         </div>
@@ -88,8 +88,8 @@ function WalletStep() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-semibold">Your business wallet</h1>
-      <p className="text-sm text-black/70">
+      <h1 className="h-page">Your business wallet</h1>
+      <p className="text-sm text-body">
         This wallet will own your business vault. Any EVM wallet works. You keep the keys; if they're lost, nobody can recover them.
       </p>
       {mode === "choose" && (
@@ -168,8 +168,8 @@ function SignInStep({ onDone }: { onDone: (business: any) => void }) {
   const { busy, error, run } = useAction();
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Sign in</h1>
-      <p className="text-sm text-black/70">
+      <h1 className="h-page">Sign in</h1>
+      <p className="text-sm text-body">
         Sign a message with <span className="font-mono">{short(w.address)}</span> to prove it's yours. This doesn't move any money or cost anything.
       </p>
       <button className="btn" disabled={busy} onClick={() => run(async () => onDone((await signIn(w.client!)).business))}>
@@ -186,7 +186,7 @@ function DetailsStep({ onDone }: { onDone: () => void }) {
   const { busy, error, run } = useAction();
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">About your business</h1>
+      <h1 className="h-page">About your business</h1>
       <Field label="Business name" hint="Customers see this on invoices and reminders.">
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
@@ -210,8 +210,8 @@ function VaultStep({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Create your business vault</h1>
-      <p className="text-sm text-black/70">
+      <h1 className="h-page">Create your business vault</h1>
+      <p className="text-sm text-body">
         Your vault is a contract on Arc that your wallet owns. Payments land here. Bursar's agent gets a limited key that can only act inside these
         rules; you can change them, pause the agent, or remove it at any time.
       </p>

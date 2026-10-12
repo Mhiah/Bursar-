@@ -3,38 +3,56 @@
 @tailwind utilities;
 
 body {
-  @apply bg-paper text-ink antialiased;
+  @apply bg-paper font-sans text-ink antialiased;
 }
 
 @layer components {
+  .h-page {
+    @apply font-serif text-4xl font-normal leading-none tracking-tight md:text-[44px];
+  }
+  .h-section {
+    @apply font-serif text-[26px] font-normal leading-tight;
+  }
+  .eyebrow {
+    @apply font-mono text-xs uppercase tracking-[0.12em] text-clay;
+  }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-sm font-medium text-card transition hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-ink {
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] bg-ink px-4 py-2.5 text-sm font-medium text-paper transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-black/10 bg-white px-4 py-2 text-sm font-medium text-ink transition hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] border border-line bg-card px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-cream disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-bad px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] bg-bad px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50;
   }
   .card {
-    @apply rounded-xl border border-black/10 bg-white p-5;
+    @apply rounded-2xl border border-rule bg-card p-6;
   }
   .input {
-    @apply w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20;
+    @apply w-full rounded-[10px] border border-line bg-card px-3 py-2.5 text-sm text-ink outline-none placeholder:text-muted focus:border-brand focus:ring-2 focus:ring-brand/20;
   }
   .label {
-    @apply mb-1 block text-xs font-medium uppercase tracking-wide text-black/60;
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-[0.08em] text-muted;
   }
   .table {
     @apply w-full text-left text-sm;
   }
   .table th {
-    @apply border-b border-black/10 pb-2 text-xs font-medium uppercase tracking-wide text-black/50;
+    @apply border-b border-rule pb-2.5 text-xs font-medium uppercase tracking-[0.06em] text-muted;
   }
   .table td {
-    @apply border-b border-black/5 py-2.5 pr-3 align-top;
+    @apply border-b border-rule-soft py-3 pr-3 align-top;
+  }
+  .table tr:last-child td {
+    @apply border-b-0;
   }
   .pill {
-    @apply inline-block rounded-full px-2 py-0.5 text-xs font-medium;
+    @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .figure {
+    @apply font-mono tabular-nums;
   }
 }

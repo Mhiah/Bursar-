@@ -43,12 +43,12 @@ export default function Suppliers() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-semibold">Suppliers</h1>
-      <p className="max-w-2xl text-sm text-black/60">
+      <h1 className="h-page">Suppliers</h1>
+      <p className="max-w-2xl text-sm text-muted">
         The agent can only pay wallets you've approved on your vault. Approving is a transaction you sign; Bursar can't do it for you.
       </p>
       <section className="card space-y-4">
-        <h2 className="font-semibold">Add a supplier</h2>
+        <h2 className="h-section">Add a supplier</h2>
         <div className="grid gap-3 md:grid-cols-4">
           <Field label="Name"><input className="input" value={form.name} onChange={set("name")} /></Field>
           <Field label="Wallet"><input className="input font-mono" value={form.wallet_address} onChange={set("wallet_address")} /></Field>
@@ -88,7 +88,7 @@ export default function Suppliers() {
                   ) : (
                     <>
                       <AddressLink address={s.wallet_address} />
-                      {s.wallet_changed_at && <p className="text-xs text-amber-800">changed {new Date(s.wallet_changed_at).toLocaleDateString()}</p>}
+                      {s.wallet_changed_at && <p className="text-xs text-clay-dark">changed {new Date(s.wallet_changed_at).toLocaleDateString()}</p>}
                     </>
                   )}
                 </td>
@@ -100,13 +100,13 @@ export default function Suppliers() {
                       {approved[s.wallet_address] ? "Remove approval" : "Approve on vault"}
                     </button>
                   )}
-                  <button className="ml-3 text-black/50" onClick={() => setEditing({ id: s.id, wallet: s.wallet_address })}>Change wallet</button>
+                  <button className="ml-3 text-muted" onClick={() => setEditing({ id: s.id, wallet: s.wallet_address })}>Change wallet</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {!list.data?.suppliers.length && <p className="pt-3 text-sm text-black/50">No suppliers yet.</p>}
+        {!list.data?.suppliers.length && <p className="pt-3 text-sm text-muted">No suppliers yet.</p>}
       </section>
     </div>
   );
