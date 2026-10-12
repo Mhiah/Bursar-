@@ -36,7 +36,7 @@ export default function Start() {
 
   return (
     <div className="mx-auto max-w-xl px-6 py-10">
-      <Link href="/" className="font-serif text-2xl text-ink no-underline">
+      <Link href="/" className="font-display font-bold tracking-tight text-2xl text-ink no-underline">
         Bursar
       </Link>
       <ol className="mb-10 mt-6 flex flex-wrap gap-x-5 gap-y-2 border-b border-rule pb-4 font-mono text-xs uppercase tracking-widest">

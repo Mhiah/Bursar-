@@ -8,31 +8,31 @@ body {
 
 @layer components {
   .h-page {
-    @apply font-serif text-4xl font-normal leading-none tracking-tight md:text-[44px];
+    @apply font-display text-3xl font-extrabold leading-tight tracking-tight md:text-[38px];
   }
   .h-section {
-    @apply font-serif text-[26px] font-normal leading-tight;
+    @apply font-display text-xl font-bold tracking-tight;
   }
   .eyebrow {
-    @apply font-mono text-xs uppercase tracking-[0.12em] text-clay;
+    @apply inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-sm font-medium text-card transition hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand px-4 py-2.5 text-sm font-medium text-card transition hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-ink {
-    @apply inline-flex items-center justify-center gap-2 rounded-[10px] bg-ink px-4 py-2.5 text-sm font-medium text-paper transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-ink px-4 py-2.5 text-sm font-medium text-paper transition hover:bg-[#1c2536] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-[10px] border border-line bg-card px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-cream disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-line bg-card px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-cream disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-[10px] bg-bad px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-bad px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50;
   }
   .card {
-    @apply rounded-2xl border border-rule bg-card p-6;
+    @apply rounded-2xl border border-rule bg-card p-6 shadow-card;
   }
   .input {
-    @apply w-full rounded-[10px] border border-line bg-card px-3 py-2.5 text-sm text-ink outline-none placeholder:text-muted focus:border-brand focus:ring-2 focus:ring-brand/20;
+    @apply w-full rounded-xl border border-line bg-card px-3 py-2.5 text-sm text-ink outline-none placeholder:text-muted focus:border-brand focus:ring-2 focus:ring-brand/20;
   }
   .label {
     @apply mb-1.5 block text-xs font-medium uppercase tracking-[0.08em] text-muted;
@@ -53,6 +53,6 @@ body {
     @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
   .figure {
-    @apply font-mono tabular-nums;
+    @apply tabular-nums;
   }
 }

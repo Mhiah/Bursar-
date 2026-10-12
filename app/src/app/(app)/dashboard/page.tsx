@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useBusiness } from "@/components/business";
 import { api, AddressLink, Money, Notice, Status, TxLink, useAction, useApi } from "@/components/ui";
 import { AGENT_ADDRESS } from "@/lib/arc";
-import { Mark } from "@/components/mark";
+import { Icon } from "@/components/icons";
 
 export default function Dashboard() {
   const { business, vault, reload } = useBusiness();
@@ -29,9 +29,9 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <span className="eyebrow">{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</span>
+          <span className="text-sm font-medium text-muted">{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</span>
           <h1 className="h-page mt-3">
-            {greeting}, <em className="text-brand">{business.name}</em>.
+            {greeting}, <span className="text-brand">{business.name}</span>.
           </h1>
           <p className="mt-2 text-sm text-muted">
             Vault <AddressLink address={vault.address} />
@@ -57,7 +57,7 @@ export default function Dashboard() {
         </Notice>
       )}
 
-      <div className="grid overflow-hidden rounded-2xl border border-rule bg-card sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Stat label="In your vault" value={<Money value={total} />} sub="Operating cash plus reserve" big />
         <Stat label="Operating cash" value={<Money value={vault.operating} />} sub={`Keeps at least ${vault.cashFloor}`} />
         <Stat label="Reserve" value={<Money value={vault.reserve} />} sub="Set aside, not spent on bills" />
@@ -68,7 +68,7 @@ export default function Dashboard() {
       {waiting.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-clay-line bg-clay-soft px-6 py-4">
           <div className="flex items-center gap-4">
-            <Mark size={36} mood="asking" />
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white text-clay"><Icon name="bell" size={20} /></span>
             <div>
               <p className="eyebrow">Needs you</p>
               <p className="mt-1 text-clay-dark">
@@ -95,8 +95,8 @@ export default function Dashboard() {
           ) : (
             <ul>
               {log.data.decisions.map((d) => (
-                <li key={d.id} className="grid grid-cols-[5.5rem_1fr] gap-3 border-b border-rule-soft py-3.5 last:border-0">
-                  <span className={`pt-0.5 font-mono text-[11px] uppercase tracking-wider ${kindTone(d.kind)}`}>{kindLabel(d.kind)}</span>
+                <li key={d.id} className="grid grid-cols-[6.5rem_1fr] gap-3 border-b border-rule-soft py-3.5 last:border-0">
+                  <span className={`h-fit w-fit rounded-full px-2.5 py-0.5 text-xs font-semibold ${kindTone(d.kind)}`}>{kindLabel(d.kind)}</span>
                   <div className="min-w-0">
                     <div className="flex items-baseline justify-between gap-3">
                       <p className="text-sm font-medium">{d.summary}</p>
@@ -148,28 +148,28 @@ export default function Dashboard() {
 }
 
 const kinds: Record<string, [string, string]> = {
-  pay: ["Paid", "text-brand"],
-  early_pay: ["Paid early", "text-brand"],
-  hold: ["Held", "text-body"],
-  reserve: ["Reserve", "text-body"],
-  release: ["Released", "text-body"],
-  approval: ["Asked you", "text-clay"],
-  chase: ["Chased", "text-clay"],
-  instalment: ["Instalments", "text-clay"],
-  screen: ["Checked", "text-muted"],
-  block: ["Blocked", "text-bad"],
-  match: ["Matched", "text-brand"],
-  note: ["Note", "text-muted"],
+  pay: ["Paid", "bg-tile-mint text-tile-mintInk"],
+  early_pay: ["Paid early", "bg-tile-mint text-tile-mintInk"],
+  hold: ["Held", "bg-tile-violet text-tile-violetInk"],
+  reserve: ["Reserve", "bg-tile-violet text-tile-violetInk"],
+  release: ["Released", "bg-tile-violet text-tile-violetInk"],
+  approval: ["Asked you", "bg-tile-amber text-tile-amberInk"],
+  chase: ["Chased", "bg-tile-amber text-tile-amberInk"],
+  instalment: ["Instalments", "bg-tile-amber text-tile-amberInk"],
+  screen: ["Checked", "bg-rule-soft text-muted"],
+  block: ["Blocked", "bg-bad-soft text-bad"],
+  match: ["Matched", "bg-tile-mint text-tile-mintInk"],
+  note: ["Note", "bg-rule-soft text-muted"],
 };
 const kindLabel = (k: string) => kinds[k]?.[0] ?? k;
-const kindTone = (k: string) => kinds[k]?.[1] ?? "text-muted";
+const kindTone = (k: string) => kinds[k]?.[1] ?? "bg-rule-soft text-muted";
 
 function Stat({ label, value, sub, big }: { label: string; value: React.ReactNode; sub: string; big?: boolean }) {
   return (
-    <div className={`border-b border-rule-soft p-5 sm:border-r lg:border-b-0 ${big ? "bg-cream" : ""}`}>
-      <p className="label">{label}</p>
-      <p className={`whitespace-nowrap ${big ? "font-serif text-[28px] leading-tight" : "text-lg"}`}>{value}</p>
-      <p className="mt-1 text-xs text-muted">{sub}</p>
+    <div className={`rounded-2xl p-5 shadow-card ${big ? "bg-brand text-white" : "border border-rule bg-white"}`}>
+      <p className={`text-xs font-medium ${big ? "text-white/80" : "text-muted"}`}>{label}</p>
+      <p className={`mt-1 whitespace-nowrap font-display font-bold tracking-tight ${big ? "text-2xl" : "text-xl"}`}>{value}</p>
+      <p className={`mt-1 text-xs ${big ? "text-white/70" : "text-muted"}`}>{sub}</p>
     </div>
   );
 }

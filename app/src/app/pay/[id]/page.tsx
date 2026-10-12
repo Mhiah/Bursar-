@@ -120,7 +120,7 @@ export default function Pay({ params }: { params: { id: string } }) {
     <Shell>
       <div className="rounded-2xl border border-rule bg-card px-7 pb-6 pt-7">
         <p className="text-sm text-muted">{d.business} asks for payment</p>
-        <p className="mt-2 font-serif text-6xl leading-none">
+        <p className="mt-2 font-display text-5xl font-extrabold leading-none tracking-tight">
           {Number(d.outstanding).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} <span className="text-2xl text-muted">USDC</span>
         </p>
         <div className="mt-5 space-y-1.5 border-t border-dashed border-line pt-4 text-sm">
@@ -208,7 +208,7 @@ export default function Pay({ params }: { params: { id: string } }) {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-lg space-y-4 px-5 py-10">
-      <p className="font-serif text-2xl text-muted">Bursar</p>
+      <p className="font-display text-xl font-extrabold tracking-tight">Bursar</p>
       {children}
     </div>
   );
