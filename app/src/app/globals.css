@@ -56,3 +56,69 @@ body {
     @apply tabular-nums;
   }
 }
+
+/* ---------- motion ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { opacity: 0; animation: rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+
+@keyframes pop {
+  0% { opacity: 0; transform: translateY(10px) scale(0.92); }
+  70% { opacity: 1; transform: translateY(-2px) scale(1.02); }
+  100% { opacity: 1; transform: none; }
+}
+.pop { opacity: 0; animation: pop 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+
+/* green sweep under a highlighted word */
+@keyframes sweep { from { background-size: 0% 0.1em; } to { background-size: 100% 0.1em; } }
+.underline-sweep {
+  background-image: linear-gradient(90deg, #16b47c, #0e8a5f);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  padding-bottom: 0.04em;
+  background-size: 0% 0.1em;
+  animation: sweep 0.9s 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+/* endless ticker of payments */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee { animation: marquee 38s linear infinite; }
+.marquee:hover { animation-play-state: paused; }
+
+/* live dot */
+@keyframes ping { 75%, 100% { transform: scale(2.4); opacity: 0; } }
+.ping { animation: ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+/* gentle float for hero cards */
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.float { animation: float 6s ease-in-out infinite; }
+
+/* drifting colour blobs */
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.08); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+.drift { animation: drift 14s ease-in-out infinite; }
+
+/* icons nudge on card hover */
+@keyframes nudge { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-10deg) scale(1.08); } 60% { transform: rotate(8deg) scale(1.08); } }
+.group:hover .nudge { animation: nudge 0.6s ease-in-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .rise, .pop { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; }
+  .underline-sweep { animation: none; background-size: 100% 0.1em; }
+  .marquee, .ping, .float, .drift, .group:hover .nudge { animation: none !important; }
+}

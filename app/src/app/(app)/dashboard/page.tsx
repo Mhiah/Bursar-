@@ -5,6 +5,7 @@ import { useBusiness } from "@/components/business";
 import { api, AddressLink, Money, Notice, Status, TxLink, useAction, useApi } from "@/components/ui";
 import { AGENT_ADDRESS } from "@/lib/arc";
 import { Icon } from "@/components/icons";
+import { CountUp } from "@/components/motion";
 
 export default function Dashboard() {
   const { business, vault, reload } = useBusiness();
@@ -30,7 +31,7 @@ export default function Dashboard() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <span className="text-sm font-medium text-muted">{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</span>
-          <h1 className="h-page mt-3">
+          <h1 style={{ animationDelay: "60ms" }} className="h-page rise mt-3">
             {greeting}, <span className="text-brand">{business.name}</span>.
           </h1>
           <p className="mt-2 text-sm text-muted">
@@ -58,17 +59,18 @@ export default function Dashboard() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Stat label="In your vault" value={<Money value={total} />} sub="Operating cash plus reserve" big />
-        <Stat label="Operating cash" value={<Money value={vault.operating} />} sub={`Keeps at least ${vault.cashFloor}`} />
-        <Stat label="Reserve" value={<Money value={vault.reserve} />} sub="Set aside, not spent on bills" />
-        <Stat label="Owed to you" value={<Money value={owedTotal} />} sub={`${owed.length} invoices, ${overdue.length} late`} />
-        <Stat label="Bills to pay" value={<Money value={dueTotal} />} sub={`${due.length} waiting`} />
+        <Stat i={0} label="In your vault" value={total} sub="Operating cash plus reserve" big />
+        <Stat i={1} label="Operating cash" value={Number(vault.operating)} sub={`Keeps at least ${vault.cashFloor}`} />
+        <Stat i={2} label="Reserve" value={Number(vault.reserve)} sub="Set aside, not spent on bills" />
+        <Stat i={3} label="Owed to you" value={owedTotal} sub={`${owed.length} invoices, ${overdue.length} late`} />
+        <Stat i={4} label="Bills to pay" value={dueTotal} sub={`${due.length} waiting`} />
       </div>
 
       {waiting.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-clay-line bg-clay-soft px-6 py-4">
+        <div className="rise flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-clay-line bg-clay-soft px-6 py-4">
           <div className="flex items-center gap-4">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white text-clay"><Icon name="bell" size={20} /></span>
+            <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white text-clay">
+              <span className="ping absolute inline-flex h-full w-full rounded-xl bg-clay/20" /><Icon name="bell" size={20} /></span>
             <div>
               <p className="eyebrow">Needs you</p>
               <p className="mt-1 text-clay-dark">
@@ -94,8 +96,8 @@ export default function Dashboard() {
             <p className="py-4 text-sm text-muted">Nothing yet. Add invoices and bills, then run the agent.</p>
           ) : (
             <ul>
-              {log.data.decisions.map((d) => (
-                <li key={d.id} className="grid grid-cols-[6.5rem_1fr] gap-3 border-b border-rule-soft py-3.5 last:border-0">
+              {log.data.decisions.map((d, i) => (
+                <li key={d.id} style={{ animationDelay: `${200 + i * 70}ms` }} className="rise grid grid-cols-[6.5rem_1fr] gap-3 border-b border-rule-soft py-3.5 last:border-0">
                   <span className={`h-fit w-fit rounded-full px-2.5 py-0.5 text-xs font-semibold ${kindTone(d.kind)}`}>{kindLabel(d.kind)}</span>
                   <div className="min-w-0">
                     <div className="flex items-baseline justify-between gap-3">
@@ -125,8 +127,8 @@ export default function Dashboard() {
               {[...owed]
                 .sort((a, b) => a.due_date.localeCompare(b.due_date))
                 .slice(0, 8)
-                .map((r) => (
-                  <li key={r.id} className="flex items-center justify-between gap-3 border-b border-rule-soft py-3 last:border-0">
+                .map((r, i) => (
+                  <li key={r.id} style={{ animationDelay: `${250 + i * 70}ms` }} className="rise flex items-center justify-between gap-3 border-b border-rule-soft py-3 last:border-0">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{r.customer_name}</p>
                       <p className="font-mono text-[11px] text-muted">
@@ -164,11 +166,13 @@ const kinds: Record<string, [string, string]> = {
 const kindLabel = (k: string) => kinds[k]?.[0] ?? k;
 const kindTone = (k: string) => kinds[k]?.[1] ?? "bg-rule-soft text-muted";
 
-function Stat({ label, value, sub, big }: { label: string; value: React.ReactNode; sub: string; big?: boolean }) {
+function Stat({ label, value, sub, big, i }: { label: string; value: number; sub: string; big?: boolean; i: number }) {
   return (
-    <div className={`rounded-2xl p-5 shadow-card ${big ? "bg-brand text-white" : "border border-rule bg-white"}`}>
+    <div style={{ animationDelay: `${i * 80}ms` }} className={`rise rounded-2xl p-5 shadow-card transition duration-300 hover:-translate-y-1 hover:shadow-lift ${big ? "bg-brand text-white" : "border border-rule bg-white"}`}>
       <p className={`text-xs font-medium ${big ? "text-white/80" : "text-muted"}`}>{label}</p>
-      <p className={`mt-1 whitespace-nowrap font-display font-bold tracking-tight ${big ? "text-2xl" : "text-xl"}`}>{value}</p>
+      <p className={`mt-1 whitespace-nowrap font-display font-bold tracking-tight ${big ? "text-2xl" : "text-xl"}`}>
+        <CountUp value={value} /> <span className="text-sm font-semibold opacity-60">USDC</span>
+      </p>
       <p className={`mt-1 text-xs ${big ? "text-white/70" : "text-muted"}`}>{sub}</p>
     </div>
   );
