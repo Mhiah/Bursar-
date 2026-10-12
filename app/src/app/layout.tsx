@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { WalletProvider } from "@/components/wallet";
-import { display, mono, sans } from "./fonts";
 
 export const metadata: Metadata = {
   title: "Bursar",
@@ -10,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html lang="en">
       <body>
         <WalletProvider>{children}</WalletProvider>
       </body>

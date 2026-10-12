@@ -114,21 +114,18 @@ export default function Pay({ params }: { params: { id: string } }) {
     });
 
   if (inv.error) return <Shell><Notice kind="bad">{inv.error}</Notice></Shell>;
-  if (!d) return <Shell><p className="text-sm text-muted">Loading…</p></Shell>;
+  if (!d) return <Shell><p className="text-sm text-black/50">Loading…</p></Shell>;
 
   return (
     <Shell>
-      <div className="rounded-2xl border border-rule bg-card px-7 pb-6 pt-7">
-        <p className="text-sm text-muted">{d.business} asks for payment</p>
-        <p className="mt-2 font-display text-5xl font-extrabold leading-none tracking-tight">
-          {Number(d.outstanding).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} <span className="text-2xl text-muted">USDC</span>
+      <div className="card space-y-1">
+        <p className="text-sm text-black/50">{d.business} asks for payment</p>
+        <p className="text-3xl font-semibold"><Money value={d.outstanding} /></p>
+        <p className="text-sm text-black/70">
+          Invoice {d.invoiceNo}
+          {d.description ? ` · ${d.description}` : ""} · due {d.dueDate}
         </p>
-        <div className="mt-5 space-y-1.5 border-t border-dashed border-line pt-4 text-sm">
-          <Row k="Invoice"><span className="font-mono">{d.invoiceNo}</span></Row>
-          {d.description && <Row k="For">{d.description}</Row>}
-          <Row k="Due">{d.dueDate}</Row>
-          <Row k="Status"><Status value={d.status} /></Row>
-        </div>
+        <div className="pt-1"><Status value={d.status} /></div>
       </div>
 
       {d.status === "paid" ? (
@@ -140,7 +137,7 @@ export default function Pay({ params }: { params: { id: string } }) {
           {sent.note} {sent.hash && <TxLink hash={sent.hash} label="View transaction" />} {d.business} will see it shortly; this page updates by itself.
         </Notice>
       ) : (
-        <div className="space-y-5 rounded-2xl border border-rule bg-card p-6">
+        <div className="card space-y-5">
           {d.nextInstalment && (
             <div>
               <span className="label">Amount</span>
@@ -154,18 +151,15 @@ export default function Pay({ params }: { params: { id: string } }) {
           )}
           <div>
             <span className="label">Pay with</span>
-            <div className="flex flex-col gap-2">
+            <div className="grid gap-2 sm:grid-cols-3">
               {([
                 ["usdc", "USDC on Arc", "Straight from your wallet"],
                 ["eurc", "EURC on Arc", "Swapped to USDC for you"],
                 ["bridge", "USDC on another network", "Moved to Arc for you"],
               ] as const).map(([m, t, sub]) => (
-                <button key={m} onClick={() => { setMethod(m); setQuote(null); }} className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-left ${method === m ? "border-[1.5px] border-brand bg-brand-soft" : "border border-rule bg-card hover:bg-cream"}`}>
-                  <span>
-                    <span className="block font-semibold">{t}</span>
-                    <span className="text-[13px] text-muted">{sub}</span>
-                  </span>
-                  <span aria-hidden className={`h-4 w-4 rounded-full ${method === m ? "border-[5px] border-brand" : "border-[1.5px] border-line"}`} />
+                <button key={m} onClick={() => { setMethod(m); setQuote(null); }} className={`rounded-lg border p-3 text-left text-sm ${method === m ? "border-brand bg-brand-soft" : "border-black/10 bg-white"}`}>
+                  <span className="block font-medium">{t}</span>
+                  <span className="text-xs text-black/50">{sub}</span>
                 </button>
               ))}
             </div>
@@ -178,11 +172,11 @@ export default function Pay({ params }: { params: { id: string } }) {
             </Field>
           )}
           {!account ? (
-            <button className="btn-ink w-full py-3.5 font-semibold" disabled={act.busy} onClick={connect}>Connect wallet and pay {amount}</button>
+            <button className="btn w-full" disabled={act.busy} onClick={connect}>Connect wallet</button>
           ) : (
             <div className="space-y-3">
               {balances && method !== "bridge" && (
-                <p className="text-xs text-muted">
+                <p className="text-xs text-black/50">
                   Your wallet has {fromUnits(balances.usdc)} USDC and {fromUnits(balances.eurc)} EURC on Arc.
                 </p>
               )}
@@ -190,35 +184,26 @@ export default function Pay({ params }: { params: { id: string } }) {
                 <button className="btn-ghost" disabled={act.busy} onClick={getQuote}>See what you'll pay</button>
               )}
               {quote && <p className="text-sm">{quote}</p>}
-              <button className="btn-ink w-full py-3.5 font-semibold" disabled={act.busy} onClick={pay}>
+              <button className="btn w-full" disabled={act.busy} onClick={pay}>
                 {act.busy ? "Waiting for your wallet…" : `Pay ${amount} USDC`}
               </button>
             </div>
           )}
           {act.error && <Notice kind="bad">{act.error}</Notice>}
+          <p className="text-xs text-black/40">
+            Payment goes straight to {d.business}'s vault on Arc{network === "testnet" ? " testnet" : ""}. Bursar never holds it.
+          </p>
         </div>
       )}
-      <p className="text-center text-[13px] text-muted">
-        Goes straight to {d.business}&apos;s vault on Arc{network === "testnet" ? " testnet" : ""}. Bursar never holds it.
-      </p>
     </Shell>
   );
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto max-w-lg space-y-4 px-5 py-10">
-      <p className="font-display text-xl font-extrabold tracking-tight">Bursar</p>
+    <div className="mx-auto max-w-lg space-y-4 px-5 py-12">
+      <p className="text-sm font-semibold tracking-tight text-black/60">Bursar</p>
       {children}
-    </div>
-  );
-}
-
-function Row({ k, children }: { k: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-muted">{k}</span>
-      <span className="text-right">{children}</span>
     </div>
   );
 }

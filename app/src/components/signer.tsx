@@ -22,7 +22,7 @@ export function ConnectOwner({ owner }: { owner: string }) {
   if (w.address && w.address.toLowerCase() === owner.toLowerCase()) return null;
 
   return (
-    <div className="rounded-lg border border-clay-line bg-clay-soft p-4 text-sm text-clay-dark">
+    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
       <p className="mb-3">
         To sign this, connect your business wallet <span className="font-mono">{short(owner)}</span>.
         {w.address && <> You're connected as {short(w.address)}, which isn't it.</>}
@@ -41,7 +41,7 @@ export function ConnectOwner({ owner }: { owner: string }) {
           </button>
         )}
       </div>
-      {error && <p className="mt-2 text-bad">{error}</p>}
+      {error && <p className="mt-2 text-red-700">{error}</p>}
     </div>
   );
 }

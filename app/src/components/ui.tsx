@@ -42,16 +42,16 @@ export function Field({ label, children, hint }: { label: string; children: Reac
     <label className="block">
       <span className="label">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-muted">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-black/50">{hint}</span>}
     </label>
   );
 }
 
 export function Notice({ kind = "info", children }: { kind?: "info" | "warn" | "bad" | "ok"; children: ReactNode }) {
   const tone = {
-    info: "bg-cream border-rule",
-    warn: "bg-clay-soft border-clay-line text-clay-dark",
-    bad: "bg-bad-soft border-bad/30 text-bad",
+    info: "bg-black/[0.03] border-black/10",
+    warn: "bg-amber-50 border-amber-200 text-amber-900",
+    bad: "bg-red-50 border-red-200 text-red-900",
     ok: "bg-brand-soft border-brand/20 text-brand",
   }[kind];
   return <div className={`rounded-lg border px-4 py-3 text-sm ${tone}`}>{children}</div>;
@@ -61,18 +61,18 @@ export function Status({ value }: { value: string }) {
   const tone: Record<string, string> = {
     paid: "bg-brand-soft text-brand",
     clear: "bg-brand-soft text-brand",
-    open: "bg-cream text-ink ring-1 ring-inset ring-rule",
-    new: "bg-cream text-ink ring-1 ring-inset ring-rule",
-    scheduled: "bg-cream text-ink ring-1 ring-inset ring-rule",
-    part_paid: "bg-clay-soft text-clay-dark",
-    held: "bg-clay-soft text-clay-dark",
-    review: "bg-clay-soft text-clay-dark",
-    awaiting_approval: "bg-clay-soft text-clay-dark",
-    blocked: "bg-bad-soft text-bad",
-    rejected: "bg-bad-soft text-bad",
-    cancelled: "bg-rule-soft text-muted",
+    open: "bg-blue-50 text-blue-800",
+    new: "bg-blue-50 text-blue-800",
+    scheduled: "bg-blue-50 text-blue-800",
+    part_paid: "bg-amber-50 text-amber-900",
+    held: "bg-amber-50 text-amber-900",
+    review: "bg-amber-50 text-amber-900",
+    awaiting_approval: "bg-amber-50 text-amber-900",
+    blocked: "bg-red-50 text-red-800",
+    rejected: "bg-red-50 text-red-800",
+    cancelled: "bg-black/5 text-black/50",
   };
-  return <span className={`pill ${tone[value] ?? "bg-rule-soft text-body"}`}>{value.replace(/_/g, " ")}</span>;
+  return <span className={`pill ${tone[value] ?? "bg-black/5 text-black/70"}`}>{value.replace(/_/g, " ")}</span>;
 }
 
 export const short = (a?: string | null) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");
@@ -95,7 +95,7 @@ export function TxLink({ hash, label }: { hash: string; label?: string }) {
 
 export function Money({ value, className = "" }: { value: string | number; className?: string }) {
   const n = Number(value);
-  return <span className={`figure ${className}`}>{n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDC</span>;
+  return <span className={`tabular-nums ${className}`}>{n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDC</span>;
 }
 
 /** Run an async action with a busy flag and an error message. */

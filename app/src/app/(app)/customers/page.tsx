@@ -13,9 +13,9 @@ export default function Customers() {
 
   return (
     <div className="space-y-8">
-      <h1 className="h-page">Customers</h1>
+      <h1 className="text-2xl font-semibold">Customers</h1>
       <section className="card space-y-4">
-        <h2 className="h-section">Add a customer</h2>
+        <h2 className="font-semibold">Add a customer</h2>
         <div className="grid gap-3 md:grid-cols-3">
           <Field label="Name"><input className="input" value={form.name} onChange={set("name")} /></Field>
           <Field label="Email"><input className="input" value={form.email} onChange={set("email")} /></Field>
@@ -41,11 +41,11 @@ export default function Customers() {
             {list.data?.customers.map((c) => (
               <tr key={c.id}>
                 <td>{c.name}</td>
-                <td className="text-xs text-muted">{[c.email && "email", c.telegram_chat_id && "Telegram", c.whatsapp && "WhatsApp"].filter(Boolean).join(", ") || "none"}</td>
+                <td className="text-xs text-black/60">{[c.email && "email", c.telegram_chat_id && "Telegram", c.whatsapp && "WhatsApp"].filter(Boolean).join(", ") || "none"}</td>
                 <td><Money value={c.reliability.outstanding} /></td>
                 <td>
                   <span className="font-medium">{c.reliability.label}</span>
-                  <span className="ml-2 text-xs text-muted">
+                  <span className="ml-2 text-xs text-black/50">
                     score {c.reliability.score} · {c.reliability.paidOnTime} on time, {c.reliability.paidLate} late
                     {c.reliability.overdueNow ? `, ${c.reliability.overdueNow} overdue now` : ""}
                   </span>
@@ -54,7 +54,7 @@ export default function Customers() {
             ))}
           </tbody>
         </table>
-        {!list.data?.customers.length && <p className="pt-3 text-sm text-muted">No customers yet.</p>}
+        {!list.data?.customers.length && <p className="pt-3 text-sm text-black/50">No customers yet.</p>}
       </section>
     </div>
   );

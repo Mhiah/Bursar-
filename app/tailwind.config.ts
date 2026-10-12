@@ -1,33 +1,38 @@
 import type { Config } from "tailwindcss";
 
-// "Clean store" look: white pages, soft grey panels, a money green and bright accent tiles.
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        paper: "#FFFFFF",
-        cream: "#F6F7F9",
-        card: "#FFFFFF",
-        ink: "#0B1220",
-        body: "#3F4A5C",
-        muted: "#6B7385",
-        rule: "#E6E8EE",
-        "rule-soft": "#F0F2F5",
-        line: "#D5D9E2",
-        brand: { DEFAULT: "#0E8A5F", light: "#12A06F", soft: "#E3F6EE", dot: "#16B47C" },
-        clay: { DEFAULT: "#D9620B", dark: "#B4500A", soft: "#FFF1E5", line: "#FBD3B0" },
-        bad: { DEFAULT: "#D02F2F", soft: "#FDECEC" },
-        tile: { violet: "#EEEAFE", violetInk: "#5B3FD6", sky: "#E4F2FE", skyInk: "#1B6FC2", amber: "#FFF4DB", amberInk: "#B07A00", rose: "#FDE8EE", roseInk: "#C2335E", mint: "#E3F6EE", mintInk: "#0E8A5F" },
+        ink: "#14171f",
+        paper: "#f7f6f2",
+        brand: { DEFAULT: "#1f4d3a", light: "#2f6b52", soft: "#e3eee8" },
+        warn: "#a15c07",
+        bad: "#a3261f",
+        // public website only
+        site: {
+          bg: "#F7F6F1",
+          card: "#FFFFFF",
+          panel: "#F0EEE6",
+          ink: "#11231A",
+          body: "#48524C",
+          muted: "#7B827D",
+          line: "#E5E2D8",
+          green: "#1E7A4C",
+          deep: "#0F2419",
+          mint: "#E3F0DE",
+          gold: "#E7B23A",
+          goldsoft: "#FBF0D3",
+          red: "#C2412D",
+          redsoft: "#FBE6E1",
+        },
       },
       fontFamily: {
-        display: ["var(--font-display)", "system-ui", "sans-serif"],
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
-      },
-      boxShadow: {
-        card: "0 1px 2px rgba(11,18,32,0.04), 0 4px 16px -6px rgba(11,18,32,0.08)",
-        lift: "0 2px 4px rgba(11,18,32,0.04), 0 18px 40px -16px rgba(11,18,32,0.18)",
+        sans: ["Inter", "system-ui", "sans-serif"],
+        head: ["var(--font-head)", "Inter", "system-ui", "sans-serif"],
+        text: ["var(--font-text)", "Inter", "system-ui", "sans-serif"],
+        code: ["var(--font-code)", "ui-monospace", "monospace"],
       },
     },
   },
