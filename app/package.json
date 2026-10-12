@@ -1,0 +1,38 @@
+{
+  "name": "bursar-app",
+  "version": "1.0.0",
+  "description": "Bursar website and agent",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "agent": "tsx src/agent/worker.ts",
+    "agent:once": "tsx src/agent/worker.ts --once",
+    "test:e2e": "tsx test/e2e-local.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^18.3.12",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
+    "@circle-fin/adapter-viem-v2": "^1.19.0",
+    "@circle-fin/app-kit": "^1.16.0",
+    "@electric-sql/pglite": "^0.2.15",
+    "@types/react-dom": "^18.3.1",
+    "next": "^14.2.18",
+    "pg": "^8.13.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "viem": "^2.21.54",
+    "zod": "^3.25.76"
+  },
+  "private": true
+}

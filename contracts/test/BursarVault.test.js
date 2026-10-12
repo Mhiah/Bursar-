@@ -121,6 +121,19 @@ describe("BursarVault", () => {
       await expect(vault.approve(0)).to.be.revertedWithCustomError(vault, "NotOpen");
     });
 
+    it("lets an owner-approved payment draw on the reserve", async () => {
+      await vault.connect(agent).moveToReserve(usd(900));
+      await vault.connect(agent).requestApproval(supplier, usd(250), cat("suppliers"), ref("big"), ethers.ZeroHash);
+      await expect(vault.approve(0)).to.emit(vault, "Paid");
+      expect(await vault.reserve()).to.equal(usd(750));
+      expect(await usdc.balanceOf(supplier)).to.equal(usd(250));
+    });
+
+    it("won't approve more than the vault holds", async () => {
+      await vault.connect(agent).requestApproval(supplier, usd(2000), cat("suppliers"), ref("huge"), ethers.ZeroHash);
+      await expect(vault.approve(0)).to.be.revertedWithCustomError(vault, "InsufficientReserve");
+    });
+
     it("won't hold a bill that is already paid", async () => {
       await vault.connect(agent).agentPay(supplier, usd(10), cat("suppliers"), ref("a"));
       await expect(vault.connect(agent).requestApproval(supplier, usd(10), cat("suppliers"), ref("a"), ethers.ZeroHash))

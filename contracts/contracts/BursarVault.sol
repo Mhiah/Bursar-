@@ -188,8 +188,9 @@ contract BursarVault is ReentrancyGuard {
 
     // ---------------------------------------------------------------- owner
 
-    /// @notice Approve a held payment. The owner may go over the per-payment limit,
-    /// but the bill still can't be paid twice and still counts toward its budget.
+    /// @notice Approve a held payment. The owner may go over the per-payment limit, the
+    /// budget and the cash floor, and may draw on the reserve, but the bill still can't be
+    /// paid twice and still counts toward its budget.
     function approve(uint256 id) external onlyOwner nonReentrant {
         Pending storage p = _pending[id];
         if (!p.open) revert NotOpen();
@@ -271,8 +272,15 @@ contract BursarVault is ReentrancyGuard {
             if (enforceFloor) revert OverBudget();
         }
         uint256 op = operating();
-        if (op < amount) revert BelowCashFloor();
-        if (enforceFloor && op - amount < cashFloor) revert BelowCashFloor();
+        if (enforceFloor) {
+            if (op < amount || op - amount < cashFloor) revert BelowCashFloor();
+        } else if (op < amount) {
+            // The owner approved it, so it may draw on the reserve.
+            uint256 fromReserve = amount - op;
+            if (fromReserve > reserve) revert InsufficientReserve();
+            reserve -= fromReserve;
+            emit ReserveMoved(0, fromReserve, reserve);
+        }
         b.spent = uint128(uint256(b.spent) + amount);
         refPaid[ref] = true;
         token.safeTransfer(to, amount);

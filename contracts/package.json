@@ -6,7 +6,8 @@
     "test": "hardhat test",
     "compile": "hardhat compile",
     "deploy:testnet": "hardhat run scripts/deploy.js --network arcTestnet",
-    "deploy:mainnet": "hardhat run scripts/deploy.js --network arcMainnet"
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network arcMainnet",
+    "export-abi": "hardhat compile && node scripts/export-abi.js"
   },
   "keywords": [],
   "author": "",
