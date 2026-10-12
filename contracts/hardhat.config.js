@@ -4,6 +4,15 @@ const path = require("path");
 const { subtask } = require("hardhat/config");
 const { TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD } = require("hardhat/builtin-tasks/task-names");
 
+// Read contracts/.env if present, so keys never have to be typed into a shell.
+const envFile = path.join(__dirname, ".env");
+if (require("fs").existsSync(envFile)) {
+  for (const line of require("fs").readFileSync(envFile, "utf8").split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
+  }
+}
+
 const SOLC_VERSION = "0.8.28";
 
 // Use the solc-js compiler bundled in node_modules, so compiling works

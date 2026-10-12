@@ -36,10 +36,11 @@ npm install
 npm test
 ```
 
-Deploy the factory to Arc testnet:
+Deploy the factory to Arc testnet: put `DEPLOYER_PRIVATE_KEY=0x...` in `contracts/.env` (a testnet-only wallet with a little USDC from https://faucet.circle.com), then:
 
 ```bash
-DEPLOYER_PRIVATE_KEY=0x... npm run deploy:testnet
+npm run deploy:testnet
+npm run new-agent-wallet   # makes the agent's wallet and saves it to app/.env.local
 ```
 
 Arc testnet: chain ID `5042002`, RPC `https://rpc.testnet.arc.io`, explorer `https://explorer.testnet.arc.io`. USDC's ERC-20 interface is at `0x3600000000000000000000000000000000000000` (6 decimals).
