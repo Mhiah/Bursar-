@@ -3,16 +3,16 @@
 import { useEffect, useState } from "react";
 import { getAddress } from "viem";
 import { useBusiness } from "@/components/business";
-import { ConnectOwner, useOwnerSigner } from "@/components/signer";
+import { useChanges } from "@/components/changes";
 import { AddressLink, api, Field, Notice, Status, useAction, useApi } from "@/components/ui";
 import { bursarVaultAbi } from "@/lib/abi/BursarVault";
-import { browserPublicClient, ownerCall } from "@/lib/owner-tx";
+import { browserPublicClient } from "@/lib/owner-tx";
 
 const empty = { name: "", email: "", wallet_address: "", category: "suppliers" };
 
 export default function Suppliers() {
   const { business, vault } = useBusiness();
-  const signer = useOwnerSigner(business.owner_address);
+  const changes = useChanges();
   const list = useApi<{ suppliers: any[] }>("/api/suppliers");
   const [form, setForm] = useState(empty);
   const [approved, setApproved] = useState<Record<string, boolean>>({});
@@ -33,13 +33,11 @@ export default function Suppliers() {
   useEffect(() => {
     if (list.data?.suppliers.length) refreshApproved(list.data.suppliers).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [list.data]);
+  }, [list.data, changes.version]);
 
-  const setPayee = (wallet: string, ok: boolean) =>
-    act.run(async () => {
-      await ownerCall(signer.client!, vault.address, "setPayee", [getAddress(wallet), ok]);
-      await refreshApproved(list.data!.suppliers);
-    });
+  // Waits in the list of changes at the top; the owner approves them all at once.
+  const setPayee = (s: any, ok: boolean) =>
+    changes.add(`payee:${s.wallet_address.toLowerCase()}`, `${ok ? "Approve" : "Remove approval for"} ${s.name}`, "setPayee", [getAddress(s.wallet_address), ok]);
 
   return (
     <div className="space-y-8">
@@ -70,7 +68,6 @@ export default function Suppliers() {
           </Notice>
         )}
       </section>
-      <ConnectOwner owner={business.owner_address} />
       {act.error && <Notice kind="bad">{act.error}</Notice>}
       <section className="card overflow-x-auto">
         <table className="table">
@@ -93,13 +90,14 @@ export default function Suppliers() {
                   )}
                 </td>
                 <td>{s.category}</td>
-                <td><Status value={approved[s.wallet_address] ? "yes" : "no"} /></td>
+                <td>
+                  <Status value={approved[s.wallet_address] ? "yes" : "no"} />
+                  {changes.pending(`payee:${s.wallet_address.toLowerCase()}`) && <p className="text-xs text-muted">Waiting for approval</p>}
+                </td>
                 <td className="whitespace-nowrap text-right text-xs">
-                  {signer.ready && (
-                    <button className="text-brand" disabled={act.busy} onClick={() => setPayee(s.wallet_address, !approved[s.wallet_address])}>
-                      {approved[s.wallet_address] ? "Remove approval" : "Approve on vault"}
-                    </button>
-                  )}
+                  <button className="text-brand" disabled={act.busy} onClick={() => setPayee(s, !approved[s.wallet_address])}>
+                    {approved[s.wallet_address] ? "Remove approval" : "Approve on vault"}
+                  </button>
                   <button className="ml-3 text-muted" onClick={() => setEditing({ id: s.id, wallet: s.wallet_address })}>Change wallet</button>
                 </td>
               </tr>

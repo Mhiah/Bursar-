@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getAddress, isAddress, parseUnits, zeroAddress } from "viem";
 import { useBusiness } from "@/components/business";
+import { useChanges } from "@/components/changes";
 import { ConnectOwner, useOwnerSigner } from "@/components/signer";
 import { AddressLink, api, Field, Notice, useAction, useApi } from "@/components/ui";
 import { bursarVaultAbi } from "@/lib/abi/BursarVault";
@@ -19,6 +20,14 @@ export default function Settings() {
   const suppliers = useApi<{ suppliers: any[] }>("/api/suppliers");
   const act = useAction();
   const [done, setDone] = useState<string | null>(null);
+  const changes = useChanges();
+
+  // Vault changes wait in the list at the top and are approved together, once.
+  const queue = (key: string, label: string, fn: string, args: readonly unknown[]) =>
+    act.run(async () => {
+      changes.add(key, label, fn, args);
+      setDone("Added to your changes. Approve them all at once at the top of the page.");
+    });
 
   const call = (label: string, fn: string, args: readonly unknown[]) =>
     act.run(async () => {
@@ -49,10 +58,11 @@ export default function Settings() {
     );
     setBudgets(res);
   };
+  const [extraCats, setExtraCats] = useState<string[]>([]);
   useEffect(() => {
-    if (suppliers.data) loadBudgets(suppliers.data.suppliers.map((s) => s.category)).catch(() => {});
+    if (suppliers.data) loadBudgets([...suppliers.data.suppliers.map((s) => s.category), ...extraCats]).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [suppliers.data]);
+  }, [suppliers.data, extraCats, changes.version]);
 
   // ---- withdraw
   const [wd, setWd] = useState({ to: business.owner_address, amount: "" });
@@ -72,7 +82,6 @@ export default function Settings() {
           invoices. Send USDC to your vault <AddressLink address={vault.address} /> to give the agent cash to work with.
         </Notice>
       )}
-      <ConnectOwner owner={business.owner_address} />
       {act.error && <Notice kind="bad">{act.error}</Notice>}
       {done && <Notice kind="ok">{done}</Notice>}
 
@@ -85,7 +94,7 @@ export default function Settings() {
           <Field label="Most per payment (USDC)"><input className="input" value={maxPer} onChange={(e) => setMaxPer(e.target.value)} /></Field>
           <Field label="Cash to always keep (USDC)"><input className="input" value={floor} onChange={(e) => setFloor(e.target.value)} /></Field>
         </div>
-        <button className="btn" disabled={!signer.ready || act.busy} onClick={() => call("Rules updated.", "setRules", [parseUnits(maxPer, 6), parseUnits(floor, 6)])}>
+        <button className="btn" disabled={act.busy} onClick={() => queue("rules", `Rules: at most ${maxPer || 0} USDC per payment, keep ${floor || 0} USDC`, "setRules", [parseUnits(maxPer || "0", 6), parseUnits(floor || "0", 6)])}>
           Save rules
         </button>
       </section>
@@ -99,7 +108,7 @@ export default function Settings() {
           <thead><tr><th>Category</th><th>Budget</th><th>Left this period</th><th></th></tr></thead>
           <tbody>
             {budgets.map((b) => (
-              <BudgetRow key={b.category} b={b} disabled={!signer.ready || act.busy} onSave={(limit) => call(`Budget for ${b.category} saved.`, "setBudget", [categoryKey(b.category), parseUnits(limit, 6)])} />
+              <BudgetRow key={b.category} b={b} waiting={!!changes.pending(`budget:${b.category}`)} disabled={act.busy} onSave={(limit) => queue(`budget:${b.category}`, `Budget for ${b.category}: ${limit || 0} USDC a month`, "setBudget", [categoryKey(b.category), parseUnits(limit || "0", 6)])} />
             ))}
           </tbody>
         </table>
@@ -108,10 +117,11 @@ export default function Settings() {
           <Field label="Monthly budget (USDC)"><input className="input" value={newCat.limit} onChange={(e) => setNewCat({ ...newCat, limit: e.target.value })} /></Field>
           <button
             className="btn-ghost"
-            disabled={!signer.ready || act.busy || !newCat.category}
+            disabled={act.busy || !newCat.category}
             onClick={async () => {
-              await call(`Budget for ${newCat.category} saved.`, "setBudget", [categoryKey(newCat.category), parseUnits(newCat.limit || "0", 6)]);
-              await loadBudgets([...budgets.map((b) => b.category), newCat.category]);
+              const c = newCat.category.toLowerCase();
+              await queue(`budget:${c}`, `Budget for ${c}: ${newCat.limit || 0} USDC a month`, "setBudget", [categoryKey(c), parseUnits(newCat.limit || "0", 6)]);
+              setExtraCats([...extraCats, c]);
               setNewCat({ category: "", limit: "" });
             }}
           >
@@ -129,15 +139,15 @@ export default function Settings() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button className="btn-ghost" disabled={!signer.ready || act.busy} onClick={() => call(vault.paused ? "Agent resumed." : "Agent paused.", "setPaused", [!vault.paused])}>
+          <button className="btn-ghost" disabled={act.busy} onClick={() => queue("paused", vault.paused ? "Resume the agent" : "Pause the agent", "setPaused", [!vault.paused])}>
             {vault.paused ? "Resume the agent" : "Pause the agent"}
           </button>
           {agentIsBursar ? (
-            <button className="btn-danger" disabled={!signer.ready || act.busy} onClick={() => call("Agent key removed. It can no longer do anything with your vault.", "setAgent", [zeroAddress])}>
+            <button className="btn-danger" disabled={act.busy} onClick={() => queue("agent", "Remove the agent's key", "setAgent", [zeroAddress])}>
               Remove the agent's key
             </button>
           ) : (
-            <button className="btn" disabled={!signer.ready || act.busy || !AGENT_ADDRESS} onClick={() => call("Bursar's agent is authorised.", "setAgent", [AGENT_ADDRESS])}>
+            <button className="btn" disabled={act.busy || !AGENT_ADDRESS} onClick={() => queue("agent", "Authorise Bursar's agent", "setAgent", [AGENT_ADDRESS])}>
               Authorise Bursar's agent
             </button>
           )}
@@ -187,6 +197,7 @@ export default function Settings() {
           <Field label="To wallet"><input className="input font-mono" value={wd.to} onChange={(e) => setWd({ ...wd, to: e.target.value })} /></Field>
           <Field label="Amount (USDC)"><input className="input" value={wd.amount} onChange={(e) => setWd({ ...wd, amount: e.target.value })} /></Field>
         </div>
+        {wd.amount && <ConnectOwner owner={business.owner_address} />}
         <button
           className="btn-ghost"
           disabled={!signer.ready || act.busy || !isAddress(wd.to) || !wd.amount}
@@ -199,14 +210,17 @@ export default function Settings() {
   );
 }
 
-function BudgetRow({ b, disabled, onSave }: { b: { category: string; limit: string; left: string }; disabled: boolean; onSave: (limit: string) => void }) {
+function BudgetRow({ b, waiting, disabled, onSave }: { b: { category: string; limit: string; left: string }; waiting: boolean; disabled: boolean; onSave: (limit: string) => void }) {
   const [limit, setLimit] = useState(b.limit);
   return (
     <tr>
       <td>{b.category}</td>
       <td><input className="input max-w-[140px]" value={limit} onChange={(e) => setLimit(e.target.value)} /></td>
       <td>{b.left} USDC</td>
-      <td className="text-right"><button className="text-xs text-brand" disabled={disabled} onClick={() => onSave(limit)}>Save</button></td>
+      <td className="text-right text-xs">
+        {waiting && <span className="mr-3 text-muted">Waiting for approval</span>}
+        <button className="text-brand" disabled={disabled} onClick={() => onSave(limit)}>Save</button>
+      </td>
     </tr>
   );
 }

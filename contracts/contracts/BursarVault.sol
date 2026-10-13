@@ -4,12 +4,14 @@ pragma solidity ^0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 
 /// @title BursarVault
 /// @notice Holds one business's USDC. The owner (the business's own wallet) sets the
 /// rules; the agent can only move money inside them. The rules live here, not in the
 /// agent's prompt, so a wrong or tricked agent still cannot break them.
-contract BursarVault is ReentrancyGuard {
+/// Multicall lets the owner send several changes in one transaction (one approval).
+contract BursarVault is ReentrancyGuard, Multicall {
     using SafeERC20 for IERC20;
 
     uint256 public constant BUDGET_PERIOD = 30 days;

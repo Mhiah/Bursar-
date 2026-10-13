@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { BusinessContext } from "@/components/business";
+import { ChangesProvider } from "@/components/changes";
 import { AGENT_ADDRESS, network } from "@/lib/arc";
 import { Mark } from "@/components/mark";
 import { api, useApi } from "@/components/ui";
@@ -67,6 +68,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </div>
             </div>
             {network === "testnet" && <p className="rounded bg-clay-soft px-2 py-1 text-xs text-clay-dark">Arc testnet</p>}
+            <Link href="/" className="block text-xs text-muted no-underline hover:text-ink">
+              Back home
+            </Link>
             <button
               className="text-xs text-muted hover:text-ink"
               onClick={async () => {
@@ -81,13 +85,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1 overflow-x-auto border-b border-rule bg-cream px-4 py-2 md:hidden">
             <Mark size={22} mood={agentMood} className="mr-1 shrink-0" />
+            <Link href="/" className="whitespace-nowrap px-2.5 py-1 text-xs text-muted no-underline">
+              Back home
+            </Link>
             {nav.map(([href, label]) => (
               <Link key={href} href={href} className={`whitespace-nowrap rounded-md px-2.5 py-1 text-xs no-underline ${path === href ? "bg-ink text-paper" : "text-body"}`}>
                 {label}
               </Link>
             ))}
           </div>
-          <main className="mx-auto max-w-6xl px-4 py-8 md:px-10 md:py-10">{children}</main>
+          <main className="mx-auto max-w-6xl px-4 py-8 md:px-10 md:py-10">
+            <ChangesProvider>{children}</ChangesProvider>
+          </main>
         </div>
       </div>
     </BusinessContext.Provider>

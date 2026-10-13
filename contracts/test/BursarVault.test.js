@@ -177,6 +177,24 @@ describe("BursarVault", () => {
       }
     });
 
+    it("can send several changes in one transaction", async () => {
+      const calls = [
+        vault.interface.encodeFunctionData("setRules", [usd(5), usd(1)]),
+        vault.interface.encodeFunctionData("setBudget", [cat("rent"), usd(40)]),
+        vault.interface.encodeFunctionData("setPayee", [stranger.address, true]),
+      ];
+      await expect(vault.multicall(calls)).to.emit(vault, "BudgetSet").withArgs(cat("rent"), usd(40));
+      expect(await vault.maxPerPayment()).to.equal(usd(5));
+      expect(await vault.cashFloor()).to.equal(usd(1));
+      expect(await vault.approvedPayee(stranger.address)).to.equal(true);
+    });
+
+    it("lets no one else batch owner changes", async () => {
+      const calls = [vault.interface.encodeFunctionData("setPayee", [stranger.address, true])];
+      await expect(vault.connect(agent).multicall(calls)).to.be.revertedWithCustomError(vault, "NotOwner");
+      await expect(vault.connect(stranger).multicall(calls)).to.be.revertedWithCustomError(vault, "NotOwner");
+    });
+
     it("anchors decision-log fingerprints", async () => {
       await expect(vault.connect(agent).recordDecision(ethers.id("log-1"))).to.emit(vault, "Decision").withArgs(ethers.id("log-1"));
     });

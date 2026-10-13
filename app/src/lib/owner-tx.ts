@@ -1,6 +1,6 @@
 "use client";
 
-import { createPublicClient, http, type Account, type Address, type Chain, type Transport, type WalletClient } from "viem";
+import { createPublicClient, encodeFunctionData, http, type Account, type Hex, type Address, type Chain, type Transport, type WalletClient } from "viem";
 import { chain } from "./arc";
 import { bursarVaultAbi } from "./abi/BursarVault";
 
@@ -24,5 +24,28 @@ export async function ownerCall(client: Client, vault: Address, functionName: st
   const hash = await client.writeContract(request as any);
   const receipt = await browserPublicClient.waitForTransactionReceipt({ hash });
   if (receipt.status !== "success") throw new Error("The transaction failed.");
+  return hash;
+}
+
+/** Encodes one vault call, to be sent later with others in a single transaction. */
+export const encodeVaultCall = (functionName: string, args: readonly unknown[]): Hex =>
+  encodeFunctionData({ abi: bursarVaultAbi, functionName: functionName as any, args: args as any });
+
+/** Vaults made before batching existed can't take several changes at once. */
+async function canBatch(vault: Address) {
+  const code = await browserPublicClient.getCode({ address: vault });
+  return !!code && code.includes("ac9650d8"); // multicall(bytes[])
+}
+
+/** Sends the owner's queued vault changes: one transaction (one approval) when the vault allows it. */
+export async function ownerBatch(client: Client, vault: Address, calls: readonly Hex[]) {
+  if (calls.length > 1 && (await canBatch(vault))) return ownerCall(client, vault, "multicall", [calls]);
+  let hash: Hex | undefined;
+  for (const data of calls) {
+    await browserPublicClient.call({ to: vault, data, account: client.account });
+    hash = await client.sendTransaction({ to: vault, data, account: client.account, chain: client.chain } as any);
+    const receipt = await browserPublicClient.waitForTransactionReceipt({ hash: hash! });
+    if (receipt.status !== "success") throw new Error("The transaction failed.");
+  }
   return hash;
 }
