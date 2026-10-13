@@ -65,7 +65,8 @@ What to put in `.env.local`:
   ```
   Put that address in `NEXT_PUBLIC_AGENT_ADDRESS`. The agent calls the vault with `circle wallet execute`; Circle sponsors its gas (capped). It can only act inside each vault's rules.
 - Or leave `AGENT_SIGNER` empty and set `NEXT_PUBLIC_AGENT_ADDRESS` and `AGENT_PRIVATE_KEY` from `npm run new-agent-wallet` (give it a little USDC for gas).
-- `ANTHROPIC_API_KEY`: for Claude's decisions.
+- `AI_PROVIDER=blockrun`: the agent's Claude calls go to BlockRun (on Circle's Agent Marketplace) and are paid per call in USDC on Arc from the Circle agent wallet over x402, so no Anthropic account is needed. `AI_MODEL` (default `claude-haiku-4-5`), `AI_MAX_TOKENS` and `AI_MAX_USDC_PER_CALL` keep each call cheap. Keep a little USDC in the agent wallet.
+- Or leave `AI_PROVIDER` empty and set `ANTHROPIC_API_KEY` to call Anthropic directly.
 - `SESSION_SECRET`: any long random string.
 - `DATABASE_URL`: a Postgres URL. Without it the site uses a local file database, which only one process can open, so use the dashboard's "Run the agent now" button instead of `npm run agent`.
 - `CHAINALYSIS_API_KEY`: free sanctions screening key. Without it, every payment goes to the owner for approval.

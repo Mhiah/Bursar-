@@ -46,10 +46,10 @@ type Write =
   | { functionName: "releaseReserve"; args: readonly [bigint] }
   | { functionName: "recordDecision"; args: readonly [Hex] };
 
-const circleChain = () => process.env.CIRCLE_CHAIN || (network === "mainnet" ? "ARC" : "ARC-TESTNET");
+export const circleChain = () => process.env.CIRCLE_CHAIN || (network === "mainnet" ? "ARC" : "ARC-TESTNET");
 
 /** Run the Circle CLI that ships with the app and return its JSON. */
-function circle(args: string[]): Promise<any> {
+export function circle(args: string[]): Promise<any> {
   const cli = process.env.CIRCLE_CLI_PATH || join(process.cwd(), "node_modules", "@circle-fin", "cli", "dist", "index.js");
   return new Promise((resolve) => {
     execFile(

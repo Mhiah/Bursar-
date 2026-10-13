@@ -28,6 +28,8 @@
     "@circle-fin/cli": "1.2.1",
     "@electric-sql/pglite": "^0.2.15",
     "@types/react-dom": "^18.3.1",
+    "@x402/core": "2.11.0",
+    "@x402/evm": "2.11.0",
     "next": "^14.2.18",
     "pg": "^8.13.1",
     "react": "^18.3.1",

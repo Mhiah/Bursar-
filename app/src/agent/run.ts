@@ -1,4 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { getAddress, type Address, type Hex } from "viem";
 import { readVault } from "@/lib/chain";
 import { one, q } from "@/lib/db";
@@ -12,6 +11,7 @@ import { syncApprovals } from "@/lib/approvals";
 import { syncIncoming } from "./incoming";
 import { buildTools, daysUntil, type BillCtx } from "./tools";
 import { dryRun, send, agentAddress } from "./wallet";
+import { aiClient, useBlockRun } from "./ai";
 
 const MODEL = "claude-opus-5-5";
 
@@ -20,21 +20,31 @@ export type Decider = (input: { system: string; prompt: string; tools: ReturnTyp
 
 /** Claude decides, calling the tools until it's done. */
 export const claudeDecider: Decider = async ({ system, prompt, tools }) => {
-  const client = new Anthropic();
-  const runner = client.beta.messages.toolRunner({
-    model: MODEL,
-    max_tokens: 16000,
-    thinking: { type: "adaptive" },
-    output_config: { effort: "high" },
-    // If a request is declined, the API retries it on a fallback model.
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    system,
-    tools,
-    max_iterations: 25,
-    messages: [{ role: "user", content: prompt }],
-  });
-  const final = await runner.done();
+  const client = aiClient();
+  const runner = useBlockRun()
+    ? // Paid per call from the agent wallet, priced up front from max_tokens, so keep it lean.
+      client.beta.messages.toolRunner({
+        model: process.env.AI_MODEL || "claude-haiku-4-5",
+        max_tokens: Number(process.env.AI_MAX_TOKENS || 3000),
+        system,
+        tools,
+        max_iterations: 12,
+        messages: [{ role: "user", content: prompt }],
+      })
+    : client.beta.messages.toolRunner({
+        model: MODEL,
+        max_tokens: 16000,
+        thinking: { type: "adaptive" },
+        output_config: { effort: "high" },
+        // If a request is declined, the API retries it on a fallback model.
+        betas: ["server-side-fallback-2026-07-01"],
+        fallbacks: "default",
+        system,
+        tools,
+        max_iterations: 25,
+        messages: [{ role: "user", content: prompt }],
+      });
+  const final = await runner.runUntilDone();
   const summary = final.content.filter((c) => c.type === "text").map((c: any) => c.text).join("\n").trim();
   return { summary, stop: final.stop_reason };
 };
