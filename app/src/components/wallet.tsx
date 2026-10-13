@@ -95,7 +95,9 @@ export function useWallet() {
 
 /** Sign Bursar's login message with the connected wallet and start a session. */
 export async function signIn(client: Client) {
-  const { message, token } = await fetch("/api/auth/nonce").then((r) => r.json());
+  const nonce = await fetch("/api/auth/nonce").then((r) => r.json());
+  if (nonce.error || !nonce.message) throw new Error(nonce.error ?? "Couldn't start sign-in.");
+  const { message, token } = nonce;
   const signature = await client.signMessage({ account: client.account, message });
   const res = await fetch("/api/auth/verify", {
     method: "POST",
