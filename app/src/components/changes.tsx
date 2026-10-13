@@ -39,24 +39,30 @@ export function ChangesProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [vault.address]);
 
-  const save = (next: Change[]) => {
-    setChanges(next);
-    try {
-      localStorage.setItem(storageKey(vault.address), JSON.stringify(next));
-    } catch {}
-  };
+  // Updates build on the latest list, so several changes added at once all stay.
+  const save = (update: (prev: Change[]) => Change[]) =>
+    setChanges((prev) => {
+      const next = update(prev);
+      try {
+        localStorage.setItem(storageKey(vault.address), JSON.stringify(next));
+      } catch {}
+      return next;
+    });
 
   const ctx: Ctx = {
     changes,
-    add: (key, label, functionName, args) => save([...changes.filter((c) => c.key !== key), { key, label, data: encodeVaultCall(functionName, args) }]),
+    add: (key, label, functionName, args) => {
+      const data = encodeVaultCall(functionName, args);
+      save((prev) => [...prev.filter((c) => c.key !== key), { key, label, data }]);
+    },
     pending: (key) => changes.find((c) => c.key === key),
-    remove: (key) => save(changes.filter((c) => c.key !== key)),
-    clear: () => save([]),
+    remove: (key) => save((prev) => prev.filter((c) => c.key !== key)),
+    clear: () => save(() => []),
     version,
     sent: () => setVersion((v) => v + 1),
   };
 
-  // Rules & settings shows the list at the end of its own page, with that page's edits in it.
+  // Rules & settings shows the list at the end of its own page.
   const onSettings = usePathname() === "/settings";
   return (
     <ChangesContext.Provider value={ctx}>

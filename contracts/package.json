@@ -8,7 +8,9 @@
     "deploy:testnet": "hardhat run scripts/deploy.js --network arcTestnet",
     "deploy:mainnet": "hardhat run scripts/deploy.js --network arcMainnet",
     "export-abi": "hardhat compile && node scripts/export-abi.js",
-    "new-agent-wallet": "node scripts/new-agent-wallet.js"
+    "new-agent-wallet": "node scripts/new-agent-wallet.js",
+    "deploy:savings:mainnet": "hardhat run scripts/deploy-savings.js --network arcMainnet",
+    "deploy:savings:testnet": "hardhat run scripts/deploy-savings.js --network arcTestnet"
   },
   "keywords": [],
   "author": "",

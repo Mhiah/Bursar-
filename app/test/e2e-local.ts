@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { createPublicClient, createWalletClient, http, parseUnits, type Address, type Hex } from "viem";
+import { createPublicClient, createWalletClient, encodeFunctionData, http, parseUnits, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat } from "viem/chains";
 
@@ -76,6 +76,8 @@ async function main() {
   const { runBusiness } = await import("../src/agent/run");
   const { bursarVaultAbi } = await import("../src/lib/abi/BursarVault");
   const { bursarFactoryAbi } = await import("../src/lib/abi/BursarFactory");
+  const { bursarSavingsAbi } = await import("../src/lib/abi/BursarSavings");
+  const { bursarSavingsFactoryAbi } = await import("../src/lib/abi/BursarSavingsFactory");
   const { parseEventLogs } = await import("viem");
 
   // ---------------------------------------------------------------- owner sets up a vault
@@ -93,6 +95,23 @@ async function main() {
     bid, owner.address, "Test Bakery", vault, (block - 1n).toString(),
   ]);
   await logDecision(bid, "note", "Business vault created", "test");
+
+  // ---------------------------------------------------------------- savings: an account, a pot, AutoSave and Save when paid
+  const savingsFactory = await deploy("BursarSavingsFactory", [usdc.address]);
+  await tx(owner, savingsFactory.address, bursarSavingsFactoryAbi, "createSavings", [agent.address]);
+  const [savings] = (await pub.readContract({ address: savingsFactory.address, abi: bursarSavingsFactoryAbi, functionName: "savingsOf", args: [owner.address] })) as Address[];
+  await tx(owner, savings, bursarSavingsAbi, "createPot", ["Rainy day", 0, 0n, 0n]);
+  // The owner's one approval on the vault: savings may be paid, up to 60 a month.
+  await tx(owner, vault, bursarVaultAbi, "multicall", [[
+    encodeFunctionData({ abi: bursarVaultAbi, functionName: "setPayee", args: [savings, true] }),
+    encodeFunctionData({ abi: bursarVaultAbi, functionName: "setBudget", args: [categoryKey("savings"), usd(60)] }),
+  ]]);
+  const since = new Date(Date.now() - 1000).toISOString();
+  await q("UPDATE businesses SET savings_address = $1, savings_plans = $2 WHERE id = $3", [
+    savings,
+    JSON.stringify({ autoSave: { pot: 0, amount: usd(5).toString(), every: "week", nextAt: since }, whenPaid: { pot: 0, percent: 10, since } }),
+    bid,
+  ]);
 
   // ---------------------------------------------------------------- a customer pays an invoice
   const cid = newId();
@@ -171,6 +190,17 @@ async function main() {
   assert.equal(r1!.status, "paid", "the customer's payment matched INV-1");
   assert.equal(out.received, 1);
   assert.ok(promptSeen.includes("Flour Co"), "the agent sees the bills");
+
+  // Savings: AutoSave (5) and 10% of the 500 payment (50) went from the vault into the pot, inside the 60 budget.
+  const pot = (await pub.readContract({ address: savings, abi: bursarSavingsAbi, functionName: "pot", args: [0n] })) as any;
+  assert.equal(pot.balance, usd(55), "AutoSave and Save when paid filled the pot");
+  assert.equal(out.saved, 2);
+  const moves = await q("SELECT source, status FROM savings_moves WHERE business_id = $1 ORDER BY source", [bid]);
+  assert.deepEqual(moves.map((m) => `${m.source}:${m.status}`), ["auto:done", "paid:done"]);
+  const plans = (await one<{ savings_plans: any }>("SELECT savings_plans FROM businesses WHERE id = $1", [bid]))!.savings_plans;
+  assert.ok(new Date(plans.autoSave.nextAt) > new Date(), "AutoSave moved on to its next date");
+  // The agent can't take savings out.
+  await assert.rejects(walletFor(agent).writeContract({ address: savings, abi: bursarSavingsAbi, functionName: "withdraw", args: [0n, agent.address, 1n] } as any));
 
   // Clean bill paid onchain; over-limit bill refused then raised for approval.
   const r = (i: number) => Object.entries(results).find(([k]) => k.startsWith(`${i} `))![1];

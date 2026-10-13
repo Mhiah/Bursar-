@@ -58,6 +58,7 @@ npm run agent                # agent worker, runs every AGENT_INTERVAL_SECONDS
 What to put in `.env.local`:
 
 - `NEXT_PUBLIC_FACTORY_ADDRESS`: the factory you deployed.
+- `NEXT_PUBLIC_SAVINGS_FACTORY_ADDRESS`: the savings factory (`npm run deploy:savings:mainnet` in `contracts/`). Each business opens its own savings account from it: Flex, Locked and Target pots, with AutoSave and Save when paid run by the agent inside the vault's monthly savings budget.
 - `AGENT_SIGNER=circle` and `NEXT_PUBLIC_AGENT_ADDRESS`: the agent signs with a Circle Agent Wallet (Circle's Agent Stack), so no private key lives on the server. Set it up once from `app/`:
   ```bash
   npx circle wallet login you@example.com --type agent   # emails a code; first login also makes the wallet

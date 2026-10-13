@@ -46,6 +46,7 @@ export const EURC: Address =
   network === "mainnet" ? "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1" : "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a";
 
 export const FACTORY = (process.env.NEXT_PUBLIC_FACTORY_ADDRESS || "") as Address;
+export const SAVINGS_FACTORY = (process.env.NEXT_PUBLIC_SAVINGS_FACTORY_ADDRESS || "") as Address;
 export const AGENT_ADDRESS = (process.env.NEXT_PUBLIC_AGENT_ADDRESS || "") as Address;
 
 export const explorerTx = (hash: string) => `${chain.blockExplorers.default.url}/tx/${hash}`;

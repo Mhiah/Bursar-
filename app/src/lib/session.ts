@@ -62,9 +62,18 @@ export type Business = {
   name: string;
   email: string | null;
   vault_address: string | null;
+  savings_address: string | null;
+  savings_plans: SavingsPlans;
   settings: BusinessSettings;
   last_block: string | null;
   created_at: string;
+};
+
+export type SavingsPlans = {
+  /** Save a set amount from the vault on a schedule. */
+  autoSave?: { pot: number; amount: string; every: "day" | "week" | "month"; nextAt: string } | null;
+  /** Save a share of every customer payment. `since` keeps older payments out. */
+  whenPaid?: { pot: number; percent: number; since: string } | null;
 };
 
 export type BusinessSettings = {

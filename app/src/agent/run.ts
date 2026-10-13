@@ -9,6 +9,7 @@ import { fromUnits } from "@/lib/money";
 import { defaultSettings, type Business } from "@/lib/session";
 import { syncApprovals } from "@/lib/approvals";
 import { syncIncoming } from "./incoming";
+import { runSavings } from "./savings";
 import { buildTools, daysUntil, type BillCtx } from "./tools";
 import { dryRun, send, agentAddress } from "./wallet";
 import { aiClient, useBlockRun } from "./ai";
@@ -63,6 +64,7 @@ export async function runBusiness(businessId: string, decide: Decider = claudeDe
   const received = await syncIncoming(b);
   await syncApprovals(b.id, vault);
   const startHead = await one<{ hash: string }>("SELECT hash FROM decisions WHERE business_id = $1 ORDER BY seq DESC LIMIT 1", [b.id]);
+  const saved = await runSavings(b, vault);
 
   // ---------------------------------------------------------------- bills, with every check done in code
   const billRows = await q<any>(
@@ -131,7 +133,7 @@ export async function runBusiness(businessId: string, decide: Decider = claudeDe
     [b.id],
   );
 
-  if (!bills.length && !receivables.length && !unmatched.length && state.operating <= state.cashFloor) return { received, decisions: 0 };
+  if (!bills.length && !receivables.length && !unmatched.length && state.operating <= state.cashFloor) return { received, saved, decisions: 0 };
 
   const tools = buildTools({
     businessId: b.id,
@@ -219,7 +221,7 @@ Be decisive and brief. Finish with one or two sentences summarising what you did
       await q("UPDATE decisions SET anchor_tx = $1 WHERE id = $2", [tx.hash, head.id]);
     }
   }
-  return { received, summary, stop, anchored };
+  return { received, saved, summary, stop, anchored };
 }
 
 /** Every business whose vault has authorised this agent. */

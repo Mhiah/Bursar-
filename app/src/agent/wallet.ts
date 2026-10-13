@@ -5,6 +5,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { chain, network } from "@/lib/arc";
 import { publicClient } from "@/lib/chain";
 import { bursarVaultAbi } from "@/lib/abi/BursarVault";
+import { bursarSavingsAbi } from "@/lib/abi/BursarSavings";
 
 // Two ways to sign for the agent:
 //  - "circle": a Circle Agent Wallet, driven through the Circle CLI. No private key on this machine.
@@ -67,11 +68,11 @@ export function circle(args: string[]): Promise<any> {
   });
 }
 
-/** Send a vault call from the Circle agent wallet; resolves to the transaction hash. */
-async function sendViaCircle(vault: Address, call: Write): Promise<{ hash: Hex } | { error: string }> {
-  const item = getAbiItem({ abi: bursarVaultAbi, name: call.functionName }) as { inputs: readonly { type: string }[] };
+/** Send a contract call from the Circle agent wallet; resolves to the transaction hash. */
+async function sendViaCircle(vault: Address, call: { functionName: string; args: readonly unknown[] }, abi: readonly unknown[] = bursarVaultAbi): Promise<{ hash: Hex } | { error: string }> {
+  const item = getAbiItem({ abi: abi as any, name: call.functionName }) as { inputs: readonly { type: string }[] };
   const signature = `${call.functionName}(${item.inputs.map((i) => i.type).join(",")})`;
-  const params = call.args.map((a) => a.toString());
+  const params = call.args.map((a) => String(a));
   const out = await circle([
     "wallet", "execute", signature, ...params,
     "--contract", vault,
@@ -89,17 +90,23 @@ async function sendViaCircle(vault: Address, call: Write): Promise<{ hash: Hex }
 }
 
 /** Simulate, send and wait. A revert comes back as the vault's error name. */
-export async function send(vault: Address, call: Write) {
+export const send = (vault: Address, call: Write) => sendTo(vault, bursarVaultAbi, call);
+
+/** Put money that has arrived in the savings account into a pot. The agent can't take savings out. */
+export const sendAllocate = (savings: Address, pot: bigint, amount: bigint) =>
+  sendTo(savings, bursarSavingsAbi, { functionName: "allocate", args: [pot, amount] });
+
+async function sendTo(address: Address, abi: readonly unknown[], call: { functionName: string; args: readonly unknown[] }) {
   try {
     const { request, result } = await publicClient.simulateContract({
-      address: vault,
-      abi: bursarVaultAbi,
+      address,
+      abi: abi as any,
       account: useCircle() ? agentAddress() : account(),
       ...(call as any),
     });
     let hash: Hex;
     if (useCircle()) {
-      const sent = await sendViaCircle(vault, call);
+      const sent = await sendViaCircle(address, call, abi);
       if ("error" in sent) return { ok: false as const, error: sent.error };
       hash = sent.hash;
     } else {

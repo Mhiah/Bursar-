@@ -3,7 +3,7 @@ import { newId, one, q } from "./db";
 
 export type DecisionKind =
   | "pay" | "early_pay" | "hold" | "approval" | "block" | "reserve" | "release"
-  | "chase" | "instalment" | "screen" | "match" | "note";
+  | "chase" | "instalment" | "screen" | "match" | "save" | "note";
 
 /**
  * Append to a business's decision log. Each entry's hash covers the previous entry's hash,

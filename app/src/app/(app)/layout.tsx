@@ -18,6 +18,7 @@ const nav = [
   ["/approvals", "Approvals"],
   ["/log", "Decision log"],
   ["/settings", "Rules & settings"],
+  ["/savings", "Savings"],
 ] as const;
 
 export default function AppLayout({ children }: { children: ReactNode }) {

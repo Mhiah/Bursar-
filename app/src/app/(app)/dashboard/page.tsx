@@ -159,6 +159,7 @@ const kinds: Record<string, [string, string]> = {
   screen: ["Checked", "text-muted"],
   block: ["Blocked", "text-bad"],
   match: ["Matched", "text-brand"],
+  save: ["Saved", "text-brand"],
   note: ["Note", "text-muted"],
 };
 const kindLabel = (k: string) => kinds[k]?.[0] ?? k;

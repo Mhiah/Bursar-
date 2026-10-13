@@ -131,3 +131,25 @@ CREATE INDEX IF NOT EXISTS idx_requests_business ON payment_requests (business_i
 CREATE INDEX IF NOT EXISTS idx_bills_business ON bills (business_id, status);
 CREATE INDEX IF NOT EXISTS idx_decisions_business ON decisions (business_id, seq DESC);
 CREATE INDEX IF NOT EXISTS idx_chases_request ON chases (request_id, created_at DESC);
+
+-- Savings: the business's own savings account (a BursarSavings contract) and its plans.
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS savings_address TEXT;
+-- { autoSave: { pot, amount, every: day|week|month, nextAt } | null, whenPaid: { pot, percent, since } | null }
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS savings_plans JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+CREATE TABLE IF NOT EXISTS savings_moves (
+  id TEXT PRIMARY KEY,
+  business_id TEXT NOT NULL REFERENCES businesses(id),
+  pot INT NOT NULL,
+  amount BIGINT NOT NULL,
+  -- auto | paid | owner
+  source TEXT NOT NULL,
+  -- The customer payment a "save when paid" move came from; stops saving the same payment twice.
+  payment_id TEXT UNIQUE REFERENCES payments_in(id),
+  -- pending (owner sent money, waiting to go into its pot) | done | failed
+  status TEXT NOT NULL DEFAULT 'done',
+  tx_hash TEXT,
+  error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_savings_moves_business ON savings_moves (business_id, created_at DESC);
