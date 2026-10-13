@@ -390,7 +390,7 @@ function NewPot({ savings, owner, onDone }: { savings: Address; owner: string; o
       <h3 className="h-section">New savings pot</h3>
       <div className="grid gap-3 md:grid-cols-4">
         <Field label="Name">
-          <input className="input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+          <input className="input" placeholder="e.g. Rent, Tax, New oven" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
         </Field>
         <Field label="Type">
           <select className="input" value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value as any })}>
