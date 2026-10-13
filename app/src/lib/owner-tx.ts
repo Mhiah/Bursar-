@@ -4,7 +4,11 @@ import { createPublicClient, http, type Account, type Address, type Chain, type 
 import { chain } from "./arc";
 import { bursarVaultAbi } from "./abi/BursarVault";
 
-export const browserPublicClient = createPublicClient({ chain, transport: http() });
+// Reads go through this site's /api/rpc, so the browser never has to reach the Arc RPC itself.
+export const browserPublicClient = createPublicClient({
+  chain,
+  transport: http(typeof window === "undefined" ? undefined : `${window.location.origin}/api/rpc`, { timeout: 20_000 }),
+});
 
 type Client = WalletClient<Transport, Chain, Account>;
 

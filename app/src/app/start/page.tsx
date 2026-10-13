@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { parseEventLogs, parseUnits, type Address } from "viem";
@@ -22,11 +22,8 @@ export default function Start() {
   const [signed, setSigned] = useState(false);
 
   useEffect(() => {
-    api("/api/business").then((d) => {
-      setSession({ address: d.address ?? d.business?.owner_address ?? null, business: d.business });
-      if (d.business?.vault_address) router.replace("/dashboard");
-    });
-  }, [router]);
+    api("/api/business").then((d) => setSession({ address: d.address ?? d.business?.owner_address ?? null, business: d.business }));
+  }, []);
 
   // Move forward as each piece falls into place.
   useEffect(() => {
@@ -42,11 +39,14 @@ export default function Start() {
         Bursar
       </Link>
       <ol className="mb-10 mt-6 flex flex-wrap gap-x-5 gap-y-2 border-b border-rule pb-4 font-mono text-xs uppercase tracking-widest">
-        {(["wallet", "signin", "details", "vault"] as Step[]).map((s, i) => (
-          <li key={s} className={s === step ? "text-ink" : "text-muted"}>
-            <span className={s === step ? "text-clay" : ""}>{String(i + 1).padStart(2, "0")}</span> {{ wallet: "Wallet", signin: "Sign in", details: "Business", vault: "Vault" }[s]}
-          </li>
-        ))}
+        {(["wallet", "details", "vault"] as Step[]).map((s, i) => {
+          const on = s === step || (s === "wallet" && step === "signin");
+          return (
+            <li key={s} className={on ? "text-ink" : "text-muted"}>
+              <span className={on ? "text-clay" : ""}>{String(i + 1).padStart(2, "0")}</span> {{ wallet: "Wallet", signin: "", details: "Business", vault: "Vault" }[s]}
+            </li>
+          );
+        })}
       </ol>
       {step === "wallet" && <WalletStep />}
       {step === "signin" && <SignInStep
@@ -57,7 +57,7 @@ export default function Start() {
           }}
         />}
       {step === "details" && <DetailsStep onDone={async () => setSession({ address: w.address, business: (await api("/api/business")).business })} />}
-      {step === "vault" && <VaultStep onDone={() => router.replace("/settings?new=1")} />}
+      {step === "vault" && <VaultStep onDone={() => router.replace("/dashboard")} />}
     </div>
   );
 }
@@ -171,19 +171,34 @@ function WalletStep() {
   );
 }
 
+/** Straight after the wallet connects, it asks for the sign-in signature (free, no transaction). */
 function SignInStep({ onDone }: { onDone: (business: any) => void }) {
   const w = useWallet();
   const { busy, error, run } = useAction();
+  const go = () => run(async () => onDone((await signIn(w.client!)).business));
+  const asked = useRef(false);
+  useEffect(() => {
+    if (asked.current) return;
+    asked.current = true;
+    go();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <div className="space-y-4">
       <h1 className="h-page">Sign in</h1>
       <p className="text-sm text-body">
-        Sign a message with <span className="font-mono">{short(w.address)}</span> to prove it's yours. This doesn't move any money or cost anything.
+        Approve the sign-in request in your wallet for <span className="font-mono">{short(w.address)}</span>. It's a signature, not a transaction: it
+        doesn't move money or cost anything.
       </p>
-      <button className="btn" disabled={busy} onClick={() => run(async () => onDone((await signIn(w.client!)).business))}>
-        Sign in
-      </button>
-      {error && <Notice kind="bad">{error}</Notice>}
+      {busy && <Notice>Waiting for your wallet…</Notice>}
+      {error && (
+        <>
+          <Notice kind="bad">{error}</Notice>
+          <button className="btn" onClick={go}>
+            Try again
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -218,14 +233,21 @@ function VaultStep({ onDone }: { onDone: () => void }) {
   const { busy, error, run } = useAction();
   const missing = !FACTORY || !AGENT_ADDRESS;
 
+  const [checked, setChecked] = useState<"no" | "yes" | "failed">("no");
   // A vault this wallet already made (say the page closed before it was saved) is reused, not made twice.
-  useEffect(() => {
+  // Until that check succeeds, "Create vault" stays off so nobody pays for a second vault.
+  const check = () => {
     if (!w.address || missing) return;
+    setChecked("no");
     browserPublicClient
       .readContract({ address: FACTORY, abi: bursarFactoryAbi, functionName: "vaultsOf", args: [w.address] })
-      .then((v) => setExisting([...v]))
-      .catch(() => {});
-  }, [w.address, missing]);
+      .then((v) => {
+        setExisting([...v]);
+        setChecked("yes");
+      })
+      .catch(() => setChecked("failed"));
+  };
+  useEffect(check, [w.address, missing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const useExisting = (vault: Address) =>
     run(async () => {
@@ -277,9 +299,18 @@ function VaultStep({ onDone }: { onDone: () => void }) {
         .
       </Notice>
       {missing && <Notice kind="bad">This site isn't configured with a factory and agent address yet.</Notice>}
+      {checked === "no" && !missing && <Notice>Checking Arc for a vault your wallet already has…</Notice>}
+      {checked === "failed" && (
+        <Notice kind="bad">
+          Couldn't reach Arc to check for an existing vault, so creating one is paused.{" "}
+          <button className="underline" onClick={check}>
+            Check again
+          </button>
+        </Notice>
+      )}
       <button
         className="btn"
-        disabled={busy || missing}
+        disabled={busy || missing || checked !== "yes"}
         onClick={() =>
           run(async () => {
             // After a page reload the wallet connection is gone; this reconnects it.
