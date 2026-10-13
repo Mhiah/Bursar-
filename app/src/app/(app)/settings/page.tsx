@@ -138,8 +138,10 @@ export default function Settings() {
             {vault.agent !== zeroAddress && !agentIsBursar && " (not Bursar's)"}. {vault.paused ? "Paused." : ""}
           </p>
         </div>
+        <ConnectOwner owner={business.owner_address} />
         <div className="flex flex-wrap gap-2">
-          <button className="btn-ghost" disabled={act.busy} onClick={() => queue("paused", vault.paused ? "Resume the agent" : "Pause the agent", "setPaused", [!vault.paused])}>
+          {/* Pause is the emergency stop, so it goes through straight away, not with the other changes. */}
+          <button className="btn-ghost" disabled={!signer.ready || act.busy} onClick={() => call(vault.paused ? "Agent resumed." : "Agent paused.", "setPaused", [!vault.paused])}>
             {vault.paused ? "Resume the agent" : "Pause the agent"}
           </button>
           {agentIsBursar ? (
