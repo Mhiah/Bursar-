@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getAddress, isAddress, parseUnits, zeroAddress } from "viem";
+import { decodeFunctionData, getAddress, isAddress, parseUnits, zeroAddress } from "viem";
 import { useBusiness } from "@/components/business";
-import { ChangesBar, useChanges, type PageChange } from "@/components/changes";
+import { ChangesBar, useChanges } from "@/components/changes";
 import { ConnectOwner, useOwnerSigner } from "@/components/signer";
 import { AddressLink, api, Field, Notice, useAction, useApi } from "@/components/ui";
 import { bursarVaultAbi } from "@/lib/abi/BursarVault";
 import { categoryKey } from "@/lib/category";
 import { AGENT_ADDRESS } from "@/lib/arc";
-import { browserPublicClient, encodeVaultCall, ownerCall } from "@/lib/owner-tx";
+import { browserPublicClient, ownerCall } from "@/lib/owner-tx";
 import { fromUnits } from "@/lib/money";
 
 /** USDC text to units, or null if it isn't a number. */
@@ -76,55 +76,62 @@ export default function Settings() {
 
   // ---- agent settings (kept by Bursar, not on the vault, so no wallet needed)
   const [s, setS] = useState(business.settings);
-  const settingsChanged = JSON.stringify(s) !== JSON.stringify(business.settings);
 
   const agentIsBursar = vault.agent?.toLowerCase() === AGENT_ADDRESS.toLowerCase();
 
-  // Everything typed on this page that differs from the vault becomes one change in the list at the end.
-  const pageChanges: PageChange[] = [];
-  const [mp, fl] = [units(maxPer), units(floor)];
-  if (mp !== null && fl !== null && (mp !== units(vault.maxPerPayment) || fl !== units(vault.cashFloor)))
-    pageChanges.push({
-      key: "rules",
-      label: `Rules: at most ${maxPer || 0} USDC per payment, keep ${floor || 0} USDC`,
-      data: encodeVaultCall("setRules", [mp, fl]),
-      undo: () => { setMaxPer(vault.maxPerPayment); setFloor(vault.cashFloor); },
-    });
-  for (const b of budgets) {
-    const v = edits[b.category];
-    const u = v === undefined ? null : units(v);
-    if (u !== null && u !== units(b.limit))
-      pageChanges.push({
-        key: `budget:${b.category}`,
-        label: `Budget for ${b.category}: ${v || 0} USDC a month`,
-        data: encodeVaultCall("setBudget", [categoryKey(b.category), u]),
-        undo: () => setEdits(({ [b.category]: _, ...rest }) => rest),
-      });
-  }
-  newCats.forEach((n, i) => {
-    const c = n.category.trim().toLowerCase();
-    const u = units(n.limit);
-    if (c && u !== null && !pageChanges.some((p) => p.key === `budget:${c}`))
-      pageChanges.push({
-        key: `budget:${c}`,
-        label: `Budget for ${c}: ${n.limit || 0} USDC a month`,
-        data: encodeVaultCall("setBudget", [categoryKey(c), u]),
-        undo: () => setNewCats((all) => (all.length > 1 ? all.filter((_, j) => j !== i) : [{ category: "", limit: "" }])),
-      });
-  });
-
-  const afterSave = () => {
-    setExtraCats((x) => [...x, ...newCats.map((n) => n.category.trim().toLowerCase()).filter(Boolean)]);
-    setNewCats([{ category: "", limit: "" }]);
-    setEdits({});
+  // Save puts a part of this page into the list of changes. Nothing reaches the vault until
+  // "Approve all changes" at the end, which sends the whole list in one wallet approval.
+  const saveRules = () => {
+    const [mp, fl] = [units(maxPer), units(floor)];
+    if (mp === null || fl === null) return act.setError("Rules must be numbers.");
+    act.setError(null);
+    changes.add("rules", `Rules: at most ${maxPer || 0} USDC per payment, keep ${floor || 0} USDC`, "setRules", [mp, fl]);
+    setDone("Rules saved. Approve all changes at the end of the page.");
   };
+
+  const saveBudgets = () => {
+    const rows = [
+      ...budgets.filter((b) => edits[b.category] !== undefined).map((b) => ({ category: b.category, limit: edits[b.category] })),
+      ...newCats.filter((n) => n.category.trim()).map((n) => ({ category: n.category.trim().toLowerCase(), limit: n.limit })),
+    ];
+    if (rows.some((r) => units(r.limit) === null)) return act.setError("Budgets must be numbers.");
+    act.setError(null);
+    for (const r of rows) changes.add(`budget:${r.category}`, `Budget for ${r.category}: ${r.limit || 0} USDC a month`, "setBudget", [categoryKey(r.category), units(r.limit)!]);
+    const added = rows.map((r) => r.category).filter((c) => !budgets.some((b) => b.category === c));
+    setEdits({ ...edits, ...Object.fromEntries(rows.map((r) => [r.category, r.limit])) });
+    setExtraCats([...extraCats, ...added]);
+    setNewCats([{ category: "", limit: "" }]);
+    setDone(rows.length ? "Budgets saved. Approve all changes at the end of the page." : null);
+  };
+  // Once the list is on the vault, show what the vault now says.
+  useEffect(() => setEdits({}), [changes.version]);
+
+  // Coming back to this page: show the saved values that are still waiting, not the vault's old ones.
+  useEffect(() => {
+    const waiting: Record<string, string> = {};
+    for (const c of changes.changes) {
+      const { functionName, args } = decodeFunctionData({ abi: bursarVaultAbi, data: c.data });
+      if (functionName === "setRules") {
+        setMaxPer(fromUnits(args[0] as bigint));
+        setFloor(fromUnits(args[1] as bigint));
+      } else if (functionName === "setBudget" && c.key.startsWith("budget:")) {
+        waiting[c.key.slice(7)] = fromUnits(args[1] as bigint);
+      }
+    }
+    if (Object.keys(waiting).length) {
+      setEdits((e) => ({ ...waiting, ...e }));
+      setExtraCats((x) => [...new Set([...x, ...Object.keys(waiting)])]);
+    }
+  }, [changes.changes]);
+
+  const saveSettings = useAction();
 
   return (
     <div className="space-y-8">
       <h1 className="h-page">Rules & settings</h1>
       {isNew && (
         <Notice kind="ok">
-          Your vault is ready. Fill in this page, then approve everything once at the end. Add suppliers and approve their wallets, then add
+          Your vault is ready. Save each part of this page, then approve everything once at the end. Add suppliers and approve their wallets, then add
           customers and invoices. Send USDC to your vault <AddressLink address={vault.address} /> to give the agent cash to work with.
         </Notice>
       )}
@@ -139,6 +146,10 @@ export default function Settings() {
         <div className="grid gap-3 md:grid-cols-3">
           <Field label="Most per payment (USDC)"><input className="input" value={maxPer} onChange={(e) => setMaxPer(e.target.value)} /></Field>
           <Field label="Cash to always keep (USDC)"><input className="input" value={floor} onChange={(e) => setFloor(e.target.value)} /></Field>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="btn" onClick={saveRules}>Save</button>
+          {changes.pending("rules") && <span className="text-xs text-muted">Waiting for approval</span>}
         </div>
       </section>
 
@@ -157,7 +168,10 @@ export default function Settings() {
                   <td>
                     <input className="input max-w-[140px]" value={edits[b.category] ?? b.limit} onChange={(e) => setEdits({ ...edits, [b.category]: e.target.value })} />
                   </td>
-                  <td>{b.left} USDC</td>
+                  <td>
+                    {b.left} USDC
+                    {changes.pending(`budget:${b.category}`) && <span className="ml-3 text-xs text-muted">Waiting for approval</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -173,9 +187,12 @@ export default function Settings() {
             </Field>
           </div>
         ))}
-        <button className="text-xs text-brand" onClick={() => setNewCats([...newCats, { category: "", limit: "" }])}>
-          Add another category
-        </button>
+        <div className="flex items-center gap-4">
+          <button className="btn" onClick={saveBudgets}>Save</button>
+          <button className="text-xs text-brand" onClick={() => setNewCats([...newCats, { category: "", limit: "" }])}>
+            Add another category
+          </button>
+        </div>
       </section>
 
       <section className="card space-y-4">
@@ -232,17 +249,19 @@ export default function Settings() {
             ))}
           </div>
         </div>
+        <button
+          className="btn"
+          disabled={saveSettings.busy}
+          onClick={() => saveSettings.run(async () => { await api("/api/business/settings", { method: "POST", json: s }); await reload(); setDone("How the agent works is saved. This part needs no wallet."); })}
+        >
+          Save
+        </button>
+        {saveSettings.error && <Notice kind="bad">{saveSettings.error}</Notice>}
       </section>
 
-      <ChangesBar
-        extra={pageChanges}
-        hasBefore={settingsChanged}
-        beforeLabel="How the agent works (saved by Bursar, no wallet needed)"
-        before={async () => {
-          if (settingsChanged) await api("/api/business/settings", { method: "POST", json: s });
-        }}
-        after={afterSave}
-      />
+      <div className="flex justify-end">
+        <ChangesBar className="w-full md:max-w-md" />
+      </div>
 
       <section className="card space-y-4">
         <div>
