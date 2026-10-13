@@ -17,7 +17,8 @@ const nav = [
   ["/suppliers", "Suppliers"],
   ["/approvals", "Approvals"],
   ["/log", "Decision log"],
-  ["/settings", "Rules & settings"],
+  ["/settings", "Rules"],
+  ["/agent-settings", "Agent settings"],
 ] as const;
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -63,7 +64,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <Mark size={34} mood={agentMood} />
                 <div>
                   <p className="text-sm font-medium">{agentOn ? "Agent on duty" : vault.paused ? "Agent paused" : "Agent off"}</p>
-                  <p className="text-xs text-muted">{agentOn ? "Working inside your rules" : "Turn it on in Rules & settings"}</p>
+                  <p className="text-xs text-muted">{agentOn ? "Working inside your rules" : "Turn it on in Rules"}</p>
                 </div>
               </div>
             </div>

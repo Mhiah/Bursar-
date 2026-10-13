@@ -56,7 +56,7 @@ export function ChangesProvider({ children }: { children: ReactNode }) {
     sent: () => setVersion((v) => v + 1),
   };
 
-  // Rules & settings shows the list at the end of its own page, with that page's edits in it.
+  // The Rules page shows the list at the end of its own page.
   const onSettings = usePathname() === "/settings";
   return (
     <ChangesContext.Provider value={ctx}>

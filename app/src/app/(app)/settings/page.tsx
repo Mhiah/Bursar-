@@ -6,7 +6,7 @@ import { decodeFunctionData, getAddress, isAddress, parseUnits, zeroAddress } fr
 import { useBusiness } from "@/components/business";
 import { ChangesBar, useChanges } from "@/components/changes";
 import { ConnectOwner, useOwnerSigner } from "@/components/signer";
-import { AddressLink, api, Field, Notice, useAction, useApi } from "@/components/ui";
+import { AddressLink, Field, Notice, useAction, useApi } from "@/components/ui";
 import { bursarVaultAbi } from "@/lib/abi/BursarVault";
 import { categoryKey } from "@/lib/category";
 import { AGENT_ADDRESS } from "@/lib/arc";
@@ -74,8 +74,6 @@ export default function Settings() {
   // ---- withdraw
   const [wd, setWd] = useState({ to: business.owner_address, amount: "" });
 
-  // ---- agent settings (kept by Bursar, not on the vault, so no wallet needed)
-  const [s, setS] = useState(business.settings);
 
   const agentIsBursar = vault.agent?.toLowerCase() === AGENT_ADDRESS.toLowerCase();
 
@@ -124,14 +122,12 @@ export default function Settings() {
     }
   }, [changes.changes]);
 
-  const saveSettings = useAction();
-
   return (
     <div className="space-y-8">
-      <h1 className="h-page">Rules & settings</h1>
+      <h1 className="h-page">Rules</h1>
       {isNew && (
         <Notice kind="ok">
-          Your vault is ready. Save each part of this page, then approve everything once at the end. Add suppliers and approve their wallets, then add
+          Your vault is ready. Save each part of this page, then approve everything once at the end. Set how the agent works in Agent settings. Add suppliers and approve their wallets, then add
           customers and invoices. Send USDC to your vault <AddressLink address={vault.address} /> to give the agent cash to work with.
         </Notice>
       )}
@@ -221,44 +217,6 @@ export default function Settings() {
         </div>
       </section>
 
-      <section className="card space-y-4">
-        <div>
-          <h2 className="h-section">How the agent works</h2>
-          <p className="text-sm text-muted">Guidance the agent follows inside the vault's rules.</p>
-        </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          <Num label="Keep cash for the next (days of bills)" v={s.operatingDays} on={(v) => setS({ ...s, operatingDays: v })} />
-          <Num label="Pay early if due within (days)" v={s.earlyPayDays} on={(v) => setS({ ...s, earlyPayDays: v })} />
-          <Num label="Days between reminders" v={s.chaseEveryDays} on={(v) => setS({ ...s, chaseEveryDays: v })} />
-          <Num label="Most instalments (0 = off)" v={s.maxInstalments} on={(v) => setS({ ...s, maxInstalments: v })} />
-          <Num label="Instalment plan at most (days)" v={s.maxInstalmentDays} on={(v) => setS({ ...s, maxInstalmentDays: v })} />
-          <Num label="Smallest invoice to split (USDC)" v={s.minInstalmentAmount} on={(v) => setS({ ...s, minInstalmentAmount: v })} />
-        </div>
-        <div>
-          <span className="label">Chase customers on</span>
-          <div className="flex gap-4 text-sm">
-            {(["email", "telegram", "whatsapp"] as const).map((c) => (
-              <label key={c} className="flex items-center gap-1.5">
-                <input
-                  type="checkbox"
-                  checked={s.chaseChannels.includes(c)}
-                  onChange={(e) => setS({ ...s, chaseChannels: e.target.checked ? [...s.chaseChannels, c] : s.chaseChannels.filter((x: string) => x !== c) })}
-                />
-                {{ email: "Email", telegram: "Telegram", whatsapp: "WhatsApp" }[c]}
-              </label>
-            ))}
-          </div>
-        </div>
-        <button
-          className="btn"
-          disabled={saveSettings.busy}
-          onClick={() => saveSettings.run(async () => { await api("/api/business/settings", { method: "POST", json: s }); await reload(); setDone("How the agent works is saved. This part needs no wallet."); })}
-        >
-          Save
-        </button>
-        {saveSettings.error && <Notice kind="bad">{saveSettings.error}</Notice>}
-      </section>
-
       <div className="flex justify-end">
         <ChangesBar className="w-full md:max-w-md" />
       </div>
@@ -282,13 +240,5 @@ export default function Settings() {
         </button>
       </section>
     </div>
-  );
-}
-
-function Num({ label, v, on }: { label: string; v: number; on: (v: number) => void }) {
-  return (
-    <Field label={label}>
-      <input className="input" type="number" min={0} value={v} onChange={(e) => on(Number(e.target.value))} />
-    </Field>
   );
 }
