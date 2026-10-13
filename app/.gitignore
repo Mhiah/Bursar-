@@ -4,3 +4,4 @@ node_modules
 .env.local
 .data
 *.tsbuildinfo
+.next-mock

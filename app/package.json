@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "agent": "tsx src/agent/worker.ts",
     "agent:once": "tsx src/agent/worker.ts --once",
-    "test:e2e": "tsx test/e2e-local.ts"
+    "test:e2e": "tsx test/e2e-local.ts",
+    "mock": "node scripts/mock.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

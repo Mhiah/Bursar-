@@ -4,6 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { createWalletClient, custom, http, numberToHex, type Address, type WalletClient, type Account, type Chain, type Transport } from "viem";
 import { chain } from "@/lib/arc";
 import { unlockLocalWallet } from "@/lib/local-wallet";
+import { MOCK, MOCK_OWNER_KEY } from "@/lib/mock";
+import { privateKeyToAccount } from "viem/accounts";
 
 type Client = WalletClient<Transport, Chain, Account>;
 type Ctx = {
@@ -76,6 +78,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const disconnect = useCallback(() => {
     setClient(null);
     setKind(null);
+  }, []);
+
+  // Test mode: the test owner wallet is always connected, so there's nothing to install or sign for real.
+  useEffect(() => {
+    if (!MOCK) return;
+    setClient(createWalletClient({ account: privateKeyToAccount(MOCK_OWNER_KEY), chain, transport: http() }));
+    setKind("local");
   }, []);
 
   // Follow account changes in the browser wallet.
