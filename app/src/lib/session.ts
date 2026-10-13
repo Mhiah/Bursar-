@@ -70,8 +70,6 @@ export type Business = {
 };
 
 export type SavingsPlans = {
-  /** Save a set amount from the vault on a schedule. */
-  autoSave?: { pot: number; amount: string; every: "day" | "week" | "month"; nextAt: string } | null;
   /** Save a share of every customer payment. `since` keeps older payments out. */
   whenPaid?: { pot: number; percent: number; since: string } | null;
 };

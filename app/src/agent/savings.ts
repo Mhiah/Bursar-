@@ -20,14 +20,6 @@ const plain: Record<string, string> = {
 };
 const why = (e: string) => plain[e] ?? e;
 
-const nextTime = (from: Date, every: "day" | "week" | "month") => {
-  const d = new Date(from);
-  if (every === "day") d.setUTCDate(d.getUTCDate() + 1);
-  else if (every === "week") d.setUTCDate(d.getUTCDate() + 7);
-  else d.setUTCMonth(d.getUTCMonth() + 1);
-  return d;
-};
-
 async function potName(savings: Address, pot: number) {
   try {
     const p = await publicClient.readContract({ address: savings, abi: bursarSavingsAbi, functionName: "pot", args: [BigInt(pot)] });
@@ -41,8 +33,8 @@ const unassigned = (savings: Address) => publicClient.readContract({ address: sa
 
 /**
  * Savings, done in code rather than by the AI so it is exact and on time:
- * money the owner sent goes into its pot, AutoSave runs when due, and a share of every
- * matched customer payment is saved. Money only leaves the vault through agentPay, so
+ * money the owner sent goes into its pot, and a share of every matched customer payment
+ * is saved. Money only leaves the vault through agentPay, so
  * the vault's rules (approved payee, the monthly savings budget, the cash floor) cap it all.
  */
 export async function runSavings(b: Business, vault: Address) {
@@ -66,17 +58,6 @@ export async function runSavings(b: Business, vault: Address) {
       tx: tx.hash,
     });
     moved++;
-  }
-
-  // ---- AutoSave, when due. A missed turn is skipped, not saved up, so it never moves a lump at once.
-  const a = plans.autoSave;
-  if (a && BigInt(a.amount) > 0n && new Date(a.nextAt) <= new Date()) {
-    const ref = keccak256(toHex(`auto:${b.id}:${a.nextAt}`));
-    const out = await moveFromVault(b, vault, savings, a.pot, BigInt(a.amount), "auto", ref, null);
-    let next = nextTime(new Date(a.nextAt), a.every);
-    while (next <= new Date()) next = nextTime(next, a.every);
-    await q("UPDATE businesses SET savings_plans = jsonb_set(savings_plans, '{autoSave,nextAt}', to_jsonb($1::text)) WHERE id = $2", [next.toISOString(), b.id]);
-    if (out) moved++;
   }
 
   // ---- Save when paid: a share of each customer payment matched to an invoice
@@ -106,11 +87,11 @@ async function moveFromVault(
   savings: Address,
   pot: number,
   amount: bigint,
-  source: "auto" | "paid",
+  source: "paid",
   ref: Hex,
   paymentId: string | null,
 ) {
-  const what = source === "auto" ? "AutoSave" : "Save when paid";
+  const what = "Save when paid";
   const name = await potName(savings, pot);
   const id = newId();
   const refused = await dryRun(vault, savings, amount, categoryKey(SAVINGS_CATEGORY), ref);
@@ -138,7 +119,7 @@ async function moveFromVault(
     b.id,
     "save",
     `Saved ${fromUnits(amount)} USDC into ${name} (${what})`,
-    source === "auto" ? "Your AutoSave was due." : "A customer paid, and you save a share of every payment.",
+    "A customer paid, and you save a share of every payment.",
     { pot, source, paymentId, tx: pay.hash },
   );
   return true;

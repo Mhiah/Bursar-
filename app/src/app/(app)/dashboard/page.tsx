@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useBusiness } from "@/components/business";
 import { api, AddressLink, Money, Notice, Status, TxLink, useAction, useApi } from "@/components/ui";
 import { AGENT_ADDRESS } from "@/lib/arc";
@@ -11,7 +12,12 @@ export default function Dashboard() {
   const reqs = useApi<{ requests: any[]; unmatched: any[] }>("/api/requests");
   const bills = useApi<{ bills: any[] }>("/api/bills");
   const log = useApi<{ decisions: any[] }>("/api/decisions?limit=8");
+  const saved = useApi<{ savings: string | null; total: string | null }>("/api/savings");
   const agent = useAction();
+  // Money may have moved on another page (into savings, out of the vault), so read the vault fresh.
+  useEffect(() => {
+    reload();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const owed = (reqs.data?.requests ?? []).filter((r) => r.status === "open" || r.status === "part_paid");
   const owedTotal = owed.reduce((s, r) => s + Number(r.amount) - Number(r.paid_amount), 0);
@@ -57,12 +63,13 @@ export default function Dashboard() {
         </Notice>
       )}
 
-      <div className="grid overflow-hidden rounded-2xl border border-rule bg-card sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid overflow-hidden rounded-2xl border border-rule bg-card sm:grid-cols-2 lg:grid-cols-3 lg:[&>*:nth-last-child(-n+3)]:border-b-0">
         <Stat label="In your vault" value={<Money value={total} />} sub="Operating cash plus reserve" big />
         <Stat label="Operating cash" value={<Money value={vault.operating} />} sub={`Keeps at least ${vault.cashFloor}`} />
         <Stat label="Reserve" value={<Money value={vault.reserve} />} sub="Set aside, not spent on bills" />
         <Stat label="Owed to you" value={<Money value={owedTotal} />} sub={`${owed.length} invoices, ${overdue.length} late`} />
         <Stat label="Bills to pay" value={<Money value={dueTotal} />} sub={`${due.length} waiting`} />
+        <Stat label="Saved" value={<Money value={saved.data?.total ?? 0} />} sub={saved.data?.savings ? "In your savings pots →" : "Open savings →"} href="/savings" />
       </div>
 
       {waiting.length > 0 && (
@@ -165,12 +172,14 @@ const kinds: Record<string, [string, string]> = {
 const kindLabel = (k: string) => kinds[k]?.[0] ?? k;
 const kindTone = (k: string) => kinds[k]?.[1] ?? "text-muted";
 
-function Stat({ label, value, sub, big }: { label: string; value: React.ReactNode; sub: string; big?: boolean }) {
-  return (
-    <div className={`border-b border-rule-soft p-5 sm:border-r lg:border-b-0 ${big ? "bg-cream" : ""}`}>
+function Stat({ label, value, sub, big, href }: { label: string; value: React.ReactNode; sub: string; big?: boolean; href?: string }) {
+  const inner = (
+    <>
       <p className="label">{label}</p>
       <p className={`whitespace-nowrap ${big ? "font-serif text-[28px] leading-tight" : "text-lg"}`}>{value}</p>
       <p className="mt-1 text-xs text-muted">{sub}</p>
-    </div>
+    </>
   );
+  const cls = `block border-b border-rule-soft p-5 sm:border-r ${big ? "bg-cream" : ""}`;
+  return href ? <Link href={href} className={`${cls} hover:bg-cream`}>{inner}</Link> : <div className={cls}>{inner}</div>;
 }

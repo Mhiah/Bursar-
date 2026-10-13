@@ -62,7 +62,8 @@ describe("BursarSavings", () => {
 
   it("lets the owner take money out of a Flex or Target pot anytime", async () => {
     await flex();
-    await savings.createPot("New oven", Kind.Target, usd(500), 0);
+    const by = (await time.latest()) + 90 * 86400;
+    await savings.createPot("New oven", Kind.Target, usd(500), by);
     await usdc.mint(await savings.getAddress(), usd(20));
     await savings.allocate(0, usd(10));
     await savings.allocate(1, usd(10));
@@ -71,6 +72,7 @@ describe("BursarSavings", () => {
     expect(await usdc.balanceOf(owner.address)).to.equal(usd(14));
     expect((await savings.pot(0)).balance).to.equal(usd(6));
     expect((await savings.pot(1)).goal).to.equal(usd(500));
+    expect((await savings.pot(1)).date).to.equal(by);
     await expect(savings.withdraw(0, owner.address, usd(7))).to.be.revertedWithCustomError(savings, "NotEnough");
   });
 
@@ -84,6 +86,15 @@ describe("BursarSavings", () => {
     await time.increaseTo(unlock);
     await savings.withdraw(0, owner.address, usd(10));
     expect(await usdc.balanceOf(owner.address)).to.equal(usd(10));
+  });
+
+  it("lets the owner lock for longer, never shorter", async () => {
+    const unlock = (await time.latest()) + 30 * 86400;
+    await savings.createPot("Tax", Kind.Locked, 0, unlock);
+    await savings.extendLock(0, unlock + 86400);
+    expect((await savings.pot(0)).date).to.equal(unlock + 86400);
+    await expect(savings.extendLock(0, unlock)).to.be.revertedWithCustomError(savings, "LockShorter");
+    await expect(savings.connect(agent).extendLock(0, unlock + 2 * 86400)).to.be.revertedWithCustomError(savings, "NotOwner");
   });
 
   it("won't make a lock that's already open", async () => {

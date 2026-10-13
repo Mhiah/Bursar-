@@ -18,9 +18,9 @@ const KINDS = ["Flex", "Locked", "Target"] as const;
 const KIND_NOTE = {
   Flex: "Take money out anytime.",
   Locked: "Can't be taken out before its date. Nobody can open it early, not even Bursar.",
-  Target: "Save toward a goal amount. Take money out anytime.",
+  Target: "Save toward a goal amount by a date. Take money out anytime.",
 };
-type Pot = { id: number; name: string; kind: (typeof KINDS)[number]; balance: bigint; goal: bigint; unlockAt: number };
+type Pot = { id: number; name: string; kind: (typeof KINDS)[number]; balance: bigint; goal: bigint; date: number };
 
 export default function Savings() {
   const { business, vault } = useBusiness();
@@ -40,7 +40,7 @@ export default function Savings() {
       ) : !savings ? (
         <OpenSavings owner={business.owner_address} onDone={data.reload} />
       ) : (
-        <SavingsAccount savings={savings} vault={vault.address} owner={business.owner_address} plans={data.data!.plans} moves={data.data!.moves} reload={data.reload} />
+        <SavingsAccount savings={savings} vault={vault.address} maxPerPayment={vault.maxPerPayment} owner={business.owner_address} plans={data.data!.plans} moves={data.data!.moves} reload={data.reload} />
       )}
     </div>
   );
@@ -102,6 +102,7 @@ function OpenSavings({ owner, onDone }: { owner: string; onDone: () => Promise<v
 function SavingsAccount({
   savings,
   vault,
+  maxPerPayment,
   owner,
   plans,
   moves,
@@ -109,6 +110,7 @@ function SavingsAccount({
 }: {
   savings: Address;
   vault: Address;
+  maxPerPayment: string;
   owner: string;
   plans: any;
   moves: any[];
@@ -130,7 +132,7 @@ function SavingsAccount({
       const list: Pot[] = [];
       for (let i = 0; i < count; i++) {
         const p = await read("pot", [BigInt(i)]);
-        list.push({ id: i, name: p.name, kind: KINDS[p.kind], balance: p.balance, goal: p.goal, unlockAt: Number(p.unlockAt) });
+        list.push({ id: i, name: p.name, kind: KINDS[p.kind], balance: p.balance, goal: p.goal, date: Number(p.date) });
       }
       setPots(list);
       setUnassigned(await read("unassigned"));
@@ -177,7 +179,7 @@ function SavingsAccount({
         <NewPot savings={savings} owner={owner} onDone={async (msg) => { setDone(msg); await refresh(); }} />
       </section>
 
-      <Plans pots={pots} plans={plans} onSaved={async (msg) => { setDone(msg); await reload(); }} />
+      <SaveWhenPaid pots={pots} plans={plans} setup={setup} maxPerPayment={maxPerPayment} onSaved={async (msg) => { setDone(msg); await reload(); }} />
 
       <section className="card space-y-3">
         <h2 className="h-section">Recent savings</h2>
@@ -187,7 +189,7 @@ function SavingsAccount({
             <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
               <span>
                 {fromUnits(m.amount)} USDC to {pots[m.pot]?.name ?? `savings pot ${m.pot + 1}`} ·{" "}
-                <span className="text-muted">{{ auto: "AutoSave", paid: "Save when paid", owner: "You" }[m.source as string] ?? m.source}</span>
+                <span className="text-muted">{{ paid: "Save when paid", owner: "You" }[m.source as string] ?? m.source}</span>
               </span>
               <span className={`text-xs ${m.status === "failed" ? "text-bad" : "text-muted"}`}>
                 {m.status === "failed" ? "Didn't go through" : m.status === "pending" ? "Arriving" : new Date(m.created_at).toLocaleDateString()}
@@ -200,7 +202,7 @@ function SavingsAccount({
   );
 }
 
-/** The vault side: savings must be an approved payee with a monthly budget. That budget caps AutoSave and Save when paid. */
+/** The vault side: savings must be an approved payee with a monthly budget. That budget caps Save when paid. */
 function SavingsBudget({ savings, setup, onSaved }: { savings: Address; setup: { approved: boolean; budget: bigint; left: bigint } | null; onSaved: (m: string) => void }) {
   const changes = useChanges();
   const [limit, setLimit] = useState("");
@@ -213,7 +215,7 @@ function SavingsBudget({ savings, setup, onSaved }: { savings: Address; setup: {
       <div>
         <h2 className="h-section">Savings budget</h2>
         <p className="text-sm text-muted">
-          The most the agent may move from your vault into savings every 30 days, for AutoSave and Save when paid. Your vault enforces it.
+          The most the agent may move from your vault into savings every 30 days, for Save when paid. Your vault enforces it.
           {setup && setup.approved && <> Left this period: {fromUnits(setup.left)} USDC.</>}
         </p>
       </div>
@@ -261,10 +263,12 @@ function PotCard({
   onDone: (msg: string) => Promise<void>;
 }) {
   const act = useAction();
-  const [mode, setMode] = useState<"add" | "out" | null>(null);
+  const [mode, setMode] = useState<"add" | "out" | "lock" | null>(null);
   const [amount, setAmount] = useState("");
   const [to, setTo] = useState(owner);
-  const locked = p.kind === "Locked" && p.unlockAt * 1000 > Date.now();
+  const [later, setLater] = useState("");
+  const locked = p.kind === "Locked" && p.date * 1000 > Date.now();
+  const day = (t: number) => new Date(t * 1000).toLocaleDateString();
   const pct = p.kind === "Target" && p.goal > 0n ? Math.min(100, Number((p.balance * 100n) / p.goal)) : null;
 
   return (
@@ -274,8 +278,8 @@ function PotCard({
           <p className="font-medium">{p.name}</p>
           <p className="text-xs text-muted">
             {p.kind}
-            {p.kind === "Locked" && ` · ${locked ? "locked until" : "unlocked since"} ${new Date(p.unlockAt * 1000).toLocaleDateString()}`}
-            {p.kind === "Target" && ` · goal ${fromUnits(p.goal)} USDC`}
+            {p.kind === "Locked" && ` · ${locked ? "locked until" : "unlocked since"} ${day(p.date)}`}
+            {p.kind === "Target" && ` · goal ${fromUnits(p.goal)} USDC${p.date ? ` by ${day(p.date)}` : ""}`}
           </p>
         </div>
         <p className="font-serif text-2xl">{fromUnits(p.balance)}</p>
@@ -285,8 +289,44 @@ function PotCard({
           <div className="h-1.5 rounded bg-ink" style={{ width: `${pct}%` }} />
         </div>
       )}
+      {p.kind === "Target" && p.goal > 0n && (
+        <p className="text-xs text-muted">
+          {p.balance >= p.goal
+            ? "Goal reached."
+            : `${fromUnits(p.goal - p.balance)} USDC to go${p.date ? (p.date * 1000 < Date.now() ? ". The date has passed." : ` by ${day(p.date)}`) : ""}.`}
+        </p>
+      )}
       {act.error && <Notice kind="bad">{act.error}</Notice>}
-      {mode ? (
+      {mode === "lock" ? (
+        <div className="space-y-2">
+          {!signerReady && <ConnectOwner owner={owner} />}
+          <Field label="Keep it locked until">
+            <input className="input max-w-[180px]" type="date" value={later} onChange={(e) => setLater(e.target.value)} />
+          </Field>
+          <p className="text-xs text-muted">You can make a lock longer, never shorter.</p>
+          <div className="flex gap-2">
+            <button
+              className="btn"
+              disabled={!signerReady || act.busy || !later}
+              onClick={() =>
+                act.run(async () => {
+                  const until = Math.floor(new Date(`${later}T00:00:00`).getTime() / 1000);
+                  if (until <= p.date) throw new Error(`Pick a date after ${day(p.date)}.`);
+                  await savingsCall(client, savings, "extendLock", [BigInt(p.id), BigInt(until)]);
+                  await onDone(`${p.name} is now locked until ${day(until)}.`);
+                  setMode(null);
+                  setLater("");
+                })
+              }
+            >
+              {act.busy ? "Working…" : "Lock for longer"}
+            </button>
+            <button className="btn-ghost" disabled={act.busy} onClick={() => setMode(null)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : mode ? (
         <div className="space-y-2">
           {!signerReady && <ConnectOwner owner={owner} />}
           <div className="flex flex-wrap items-end gap-2">
@@ -332,6 +372,9 @@ function PotCard({
           {!locked && p.balance > 0n && (
             <button className="text-brand" onClick={() => setMode("out")}>Take out</button>
           )}
+          {p.kind === "Locked" && (
+            <button className="text-brand" onClick={() => setMode("lock")}>Lock for longer</button>
+          )}
         </div>
       )}
     </div>
@@ -341,7 +384,7 @@ function PotCard({
 function NewPot({ savings, owner, onDone }: { savings: Address; owner: string; onDone: (msg: string) => Promise<void> }) {
   const signer = useOwnerSigner(owner);
   const act = useAction();
-  const [f, setF] = useState({ name: "", kind: "Flex" as (typeof KINDS)[number], goal: "", unlock: "" });
+  const [f, setF] = useState({ name: "", kind: "Flex" as (typeof KINDS)[number], goal: "", date: "" });
   return (
     <div className="card space-y-4">
       <h3 className="h-section">New savings pot</h3>
@@ -361,9 +404,9 @@ function NewPot({ savings, owner, onDone }: { savings: Address; owner: string; o
             <input className="input" value={f.goal} onChange={(e) => setF({ ...f, goal: e.target.value })} />
           </Field>
         )}
-        {f.kind === "Locked" && (
-          <Field label="Locked until">
-            <input className="input" type="date" value={f.unlock} onChange={(e) => setF({ ...f, unlock: e.target.value })} />
+        {f.kind !== "Flex" && (
+          <Field label={f.kind === "Locked" ? "Locked until" : "Reach it by"}>
+            <input className="input" type="date" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} />
           </Field>
         )}
       </div>
@@ -372,14 +415,14 @@ function NewPot({ savings, owner, onDone }: { savings: Address; owner: string; o
       {act.error && <Notice kind="bad">{act.error}</Notice>}
       <button
         className="btn"
-        disabled={!signer.ready || act.busy || !f.name.trim() || (f.kind === "Locked" && !f.unlock)}
+        disabled={!signer.ready || act.busy || !f.name.trim() || (f.kind !== "Flex" && !f.date) || (f.kind === "Target" && !Number(f.goal))}
         onClick={() =>
           act.run(async () => {
             const kind = KINDS.indexOf(f.kind);
             const goal = f.kind === "Target" ? parseUnits((f.goal || "0").trim(), 6) : 0n;
-            const unlockAt = f.kind === "Locked" ? BigInt(Math.floor(new Date(`${f.unlock}T00:00:00`).getTime() / 1000)) : 0n;
-            await savingsCall(signer.client!, savings, "createPot", [f.name.trim(), kind, goal, unlockAt]);
-            setF({ name: "", kind: "Flex", goal: "", unlock: "" });
+            const date = f.kind !== "Flex" ? BigInt(Math.floor(new Date(`${f.date}T00:00:00`).getTime() / 1000)) : 0n;
+            await savingsCall(signer.client!, savings, "createPot", [f.name.trim(), kind, goal, date]);
+            setF({ name: "", kind: "Flex", goal: "", date: "" });
             await onDone(`Savings pot "${f.name.trim()}" made.`);
           })
         }
@@ -390,85 +433,81 @@ function NewPot({ savings, owner, onDone }: { savings: Address; owner: string; o
   );
 }
 
-/** AutoSave and Save when paid. Kept by Bursar, so saving these needs no wallet. */
-function Plans({ pots, plans, onSaved }: { pots: Pot[]; plans: any; onSaved: (msg: string) => Promise<void> }) {
+/** Save when paid. Kept by Bursar, so saving it needs no wallet. The vault's rules still cap every saving. */
+function SaveWhenPaid({
+  pots,
+  plans,
+  setup,
+  maxPerPayment,
+  onSaved,
+}: {
+  pots: Pot[];
+  plans: any;
+  setup: { approved: boolean; budget: bigint; left: bigint } | null;
+  maxPerPayment: string;
+  onSaved: (msg: string) => Promise<void>;
+}) {
   const act = useAction();
-  const a = plans.autoSave;
   const w = plans.whenPaid;
-  const [auto, setAuto] = useState({ pot: a?.pot ?? 0, amount: a ? fromUnits(a.amount) : "", every: a?.every ?? "week" });
   const [paid, setPaid] = useState({ pot: w?.pot ?? 0, percent: w ? String(w.percent) : "" });
   const save = (json: unknown, msg: string) => act.run(async () => {
     await api("/api/savings/plans", { method: "POST", json });
     await onSaved(msg);
   });
-  const potSelect = (v: number, on: (v: number) => void) => (
-    <select className="input" value={v} onChange={(e) => on(Number(e.target.value))}>
-      {pots.map((p) => (
-        <option key={p.id} value={p.id}>{p.name}</option>
-      ))}
-    </select>
-  );
+
+  // Warn when the vault's rules would stop savings going through.
+  const percent = Number(paid.percent || w?.percent || 0);
+  const max = Number(maxPerPayment);
+  const warnings: string[] = [];
+  if (setup && (!setup.approved || setup.budget === 0n)) {
+    warnings.push("Nothing will be saved until you set a savings budget above and approve it.");
+  } else if (setup && setup.left === 0n) {
+    warnings.push("This month's savings budget is used up, so nothing more will be saved until it resets.");
+  }
+  if (percent > 0) {
+    if (max === 0) warnings.push("Your most-per-payment rule is 0 USDC, so no saving can go through. Raise it in Rules.");
+    else warnings.push(`A customer payment over ${fmt((max * 100) / percent)} USDC makes a saving bigger than your most-per-payment rule (${fmt(max)} USDC), so that saving won't go through. Change it in Rules.`);
+  }
 
   if (!pots.length) return null;
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {act.error && <div className="md:col-span-2"><Notice kind="bad">{act.error}</Notice></div>}
-      <section className="card space-y-4">
-        <div>
-          <h2 className="h-section">AutoSave</h2>
-          <p className="text-sm text-muted">The agent saves a set amount from your vault on a schedule. {a ? `On: ${fromUnits(a.amount)} USDC every ${a.every}, next ${new Date(a.nextAt).toLocaleDateString()}.` : "Off."}</p>
-        </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          <Field label="Amount (USDC)">
-            <input className="input" value={auto.amount} onChange={(e) => setAuto({ ...auto, amount: e.target.value })} />
-          </Field>
-          <Field label="Every">
-            <select className="input" value={auto.every} onChange={(e) => setAuto({ ...auto, every: e.target.value })}>
-              <option value="day">day</option>
-              <option value="week">week</option>
-              <option value="month">month</option>
-            </select>
-          </Field>
-          <Field label="Into">{potSelect(auto.pot, (pot) => setAuto({ ...auto, pot }))}</Field>
-        </div>
-        <div className="flex gap-2">
-          <button className="btn" disabled={act.busy || !auto.amount} onClick={() => save({ autoSave: { pot: auto.pot, amount: auto.amount.trim(), every: auto.every } }, "AutoSave saved.")}>
-            Save
+    <section className="card space-y-4">
+      <div>
+        <h2 className="h-section">Save when paid</h2>
+        <p className="text-sm text-muted">When a customer pays an invoice, the agent saves a share of it. {w ? `On: ${w.percent}% of every payment.` : "Off."}</p>
+      </div>
+      {act.error && <Notice kind="bad">{act.error}</Notice>}
+      <div className="grid gap-3 md:grid-cols-2">
+        <Field label="Share of each payment (%)">
+          <input className="input" value={paid.percent} onChange={(e) => setPaid({ ...paid, percent: e.target.value })} />
+        </Field>
+        <Field label="Into">
+          <select className="input" value={paid.pot} onChange={(e) => setPaid({ ...paid, pot: Number(e.target.value) })}>
+            {pots.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      {warnings.map((m) => (
+        <Notice key={m} kind="warn">{m}</Notice>
+      ))}
+      <div className="flex gap-2">
+        <button
+          className="btn"
+          disabled={act.busy || !paid.percent || isNaN(Number(paid.percent))}
+          onClick={() => save({ whenPaid: { pot: paid.pot, percent: Number(paid.percent) } }, "Save when paid saved.")}
+        >
+          Save
+        </button>
+        {w && (
+          <button className="btn-ghost" disabled={act.busy} onClick={() => save({ whenPaid: null }, "Save when paid turned off.")}>
+            Turn off
           </button>
-          {a && (
-            <button className="btn-ghost" disabled={act.busy} onClick={() => save({ autoSave: null }, "AutoSave turned off.")}>
-              Turn off
-            </button>
-          )}
-        </div>
-      </section>
-
-      <section className="card space-y-4">
-        <div>
-          <h2 className="h-section">Save when paid</h2>
-          <p className="text-sm text-muted">When a customer pays an invoice, the agent saves a share of it. {w ? `On: ${w.percent}% of every payment.` : "Off."}</p>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Share of each payment (%)">
-            <input className="input" value={paid.percent} onChange={(e) => setPaid({ ...paid, percent: e.target.value })} />
-          </Field>
-          <Field label="Into">{potSelect(paid.pot, (pot) => setPaid({ ...paid, pot }))}</Field>
-        </div>
-        <div className="flex gap-2">
-          <button
-            className="btn"
-            disabled={act.busy || !paid.percent || isNaN(Number(paid.percent))}
-            onClick={() => save({ whenPaid: { pot: paid.pot, percent: Number(paid.percent) } }, "Save when paid saved.")}
-          >
-            Save
-          </button>
-          {w && (
-            <button className="btn-ghost" disabled={act.busy} onClick={() => save({ whenPaid: null }, "Save when paid turned off.")}>
-              Turn off
-            </button>
-          )}
-        </div>
-      </section>
-    </div>
+        )}
+      </div>
+    </section>
   );
 }
+
+const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });

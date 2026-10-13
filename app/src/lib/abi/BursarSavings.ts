@@ -148,7 +148,7 @@ export const bursarSavingsAbi = [
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "unlockAt",
+        "name": "date",
         "type": "uint256"
       }
     ],
@@ -204,7 +204,7 @@ export const bursarSavingsAbi = [
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "unlockAt",
+        "name": "date",
         "type": "uint256"
       }
     ],
@@ -312,7 +312,7 @@ export const bursarSavingsAbi = [
       },
       {
         "internalType": "uint64",
-        "name": "unlockAt",
+        "name": "date",
         "type": "uint64"
       }
     ],
@@ -336,7 +336,7 @@ export const bursarSavingsAbi = [
       },
       {
         "internalType": "uint64",
-        "name": "unlockAt",
+        "name": "date",
         "type": "uint64"
       }
     ],
@@ -411,7 +411,7 @@ export const bursarSavingsAbi = [
           },
           {
             "internalType": "uint64",
-            "name": "unlockAt",
+            "name": "date",
             "type": "uint64"
           }
         ],

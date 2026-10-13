@@ -9,7 +9,7 @@ import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 /// @title BursarSavings
 /// @notice A business's savings, kept apart from its vault and owned only by the business.
 /// Money arrives as plain USDC transfers (from the vault, or anyone) and waits as "unassigned"
-/// until the owner or the agent puts it into a pot. The agent can only put money into pots;
+/// until the owner or the agent puts it into a savings pot. The agent can only put money into pots;
 /// it can never take money out. Only the owner can take money out, and never from a Locked
 /// pot before its date. There is no admin key: nobody, Bursar included, can open a lock early.
 contract BursarSavings is ReentrancyGuard, Multicall {
@@ -18,7 +18,7 @@ contract BursarSavings is ReentrancyGuard, Multicall {
     enum Kind {
         Flex, // take out anytime
         Locked, // can't be taken out before unlockAt
-        Target // a goal amount; take out anytime
+        Target // a goal amount by a date; take out anytime
     }
 
     struct Pot {
@@ -26,7 +26,8 @@ contract BursarSavings is ReentrancyGuard, Multicall {
         Kind kind;
         uint128 balance;
         uint128 goal;
-        uint64 unlockAt;
+        /// Locked: can't be taken out before this time. Target: the date to reach the goal by.
+        uint64 date;
     }
 
     IERC20 public immutable token;
@@ -37,8 +38,8 @@ contract BursarSavings is ReentrancyGuard, Multicall {
     /// @notice Total held in pots. Anything above it in the balance is unassigned.
     uint256 public allocated;
 
-    event PotCreated(uint256 indexed id, string name, Kind kind, uint256 goal, uint256 unlockAt);
-    event LockExtended(uint256 indexed id, uint256 unlockAt);
+    event PotCreated(uint256 indexed id, string name, Kind kind, uint256 goal, uint256 date);
+    event LockExtended(uint256 indexed id, uint256 date);
     event Allocated(uint256 indexed id, uint256 amount, address by);
     event Withdrawn(uint256 indexed id, address to, uint256 amount);
     event AgentChanged(address indexed agent);
@@ -104,21 +105,23 @@ contract BursarSavings is ReentrancyGuard, Multicall {
 
     // ---------------------------------------------------------------- owner
 
-    function createPot(string calldata name, Kind kind, uint128 goal, uint64 unlockAt) external onlyOwner returns (uint256 id) {
-        if (kind == Kind.Locked && unlockAt <= block.timestamp) revert LockInPast();
+    function createPot(string calldata name, Kind kind, uint128 goal, uint64 date) external onlyOwner returns (uint256 id) {
+        if (kind == Kind.Locked && date <= block.timestamp) revert LockInPast();
+        if (kind == Kind.Flex) date = 0;
+        if (kind != Kind.Target) goal = 0;
         id = _pots.length;
-        _pots.push(Pot(name, kind, 0, goal, kind == Kind.Locked ? unlockAt : 0));
-        emit PotCreated(id, name, kind, goal, kind == Kind.Locked ? unlockAt : 0);
+        _pots.push(Pot(name, kind, 0, goal, date));
+        emit PotCreated(id, name, kind, goal, date);
     }
 
     /// @notice A lock can be made longer, never shorter.
-    function extendLock(uint256 id, uint64 unlockAt) external onlyOwner {
+    function extendLock(uint256 id, uint64 date) external onlyOwner {
         if (id >= _pots.length) revert NoSuchPot();
         Pot storage p = _pots[id];
         if (p.kind != Kind.Locked) revert NoSuchPot();
-        if (unlockAt <= p.unlockAt) revert LockShorter();
-        p.unlockAt = unlockAt;
-        emit LockExtended(id, unlockAt);
+        if (date <= p.date) revert LockShorter();
+        p.date = date;
+        emit LockExtended(id, date);
     }
 
     function withdraw(uint256 id, address to, uint256 amount) external onlyOwner nonReentrant {
@@ -126,7 +129,7 @@ contract BursarSavings is ReentrancyGuard, Multicall {
         if (to == address(0)) revert ZeroAddress();
         if (amount == 0) revert ZeroAmount();
         Pot storage p = _pots[id];
-        if (p.kind == Kind.Locked && block.timestamp < p.unlockAt) revert StillLocked();
+        if (p.kind == Kind.Locked && block.timestamp < p.date) revert StillLocked();
         if (amount > p.balance) revert NotEnough();
         p.balance -= uint128(amount);
         allocated -= amount;

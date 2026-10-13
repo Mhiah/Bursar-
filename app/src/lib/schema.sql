@@ -134,7 +134,7 @@ CREATE INDEX IF NOT EXISTS idx_chases_request ON chases (request_id, created_at 
 
 -- Savings: the business's own savings account (a BursarSavings contract) and its plans.
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS savings_address TEXT;
--- { autoSave: { pot, amount, every: day|week|month, nextAt } | null, whenPaid: { pot, percent, since } | null }
+-- { whenPaid: { pot, percent, since } | null }
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS savings_plans JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE TABLE IF NOT EXISTS savings_moves (
@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS savings_moves (
   business_id TEXT NOT NULL REFERENCES businesses(id),
   pot INT NOT NULL,
   amount BIGINT NOT NULL,
-  -- auto | paid | owner
+  -- paid | owner
   source TEXT NOT NULL,
   -- The customer payment a "save when paid" move came from; stops saving the same payment twice.
   payment_id TEXT UNIQUE REFERENCES payments_in(id),

@@ -96,7 +96,7 @@ async function main() {
   ]);
   await logDecision(bid, "note", "Business vault created", "test");
 
-  // ---------------------------------------------------------------- savings: an account, a pot, AutoSave and Save when paid
+  // ---------------------------------------------------------------- savings: an account, a pot and Save when paid
   const savingsFactory = await deploy("BursarSavingsFactory", [usdc.address]);
   await tx(owner, savingsFactory.address, bursarSavingsFactoryAbi, "createSavings", [agent.address]);
   const [savings] = (await pub.readContract({ address: savingsFactory.address, abi: bursarSavingsFactoryAbi, functionName: "savingsOf", args: [owner.address] })) as Address[];
@@ -109,7 +109,7 @@ async function main() {
   const since = new Date(Date.now() - 1000).toISOString();
   await q("UPDATE businesses SET savings_address = $1, savings_plans = $2 WHERE id = $3", [
     savings,
-    JSON.stringify({ autoSave: { pot: 0, amount: usd(5).toString(), every: "week", nextAt: since }, whenPaid: { pot: 0, percent: 10, since } }),
+    JSON.stringify({ whenPaid: { pot: 0, percent: 10, since } }),
     bid,
   ]);
 
@@ -191,14 +191,12 @@ async function main() {
   assert.equal(out.received, 1);
   assert.ok(promptSeen.includes("Flour Co"), "the agent sees the bills");
 
-  // Savings: AutoSave (5) and 10% of the 500 payment (50) went from the vault into the pot, inside the 60 budget.
+  // Savings: 10% of the 500 payment (50) went from the vault into the pot, inside the 60 budget.
   const pot = (await pub.readContract({ address: savings, abi: bursarSavingsAbi, functionName: "pot", args: [0n] })) as any;
-  assert.equal(pot.balance, usd(55), "AutoSave and Save when paid filled the pot");
-  assert.equal(out.saved, 2);
+  assert.equal(pot.balance, usd(50), "Save when paid filled the pot");
+  assert.equal(out.saved, 1);
   const moves = await q("SELECT source, status FROM savings_moves WHERE business_id = $1 ORDER BY source", [bid]);
-  assert.deepEqual(moves.map((m) => `${m.source}:${m.status}`), ["auto:done", "paid:done"]);
-  const plans = (await one<{ savings_plans: any }>("SELECT savings_plans FROM businesses WHERE id = $1", [bid]))!.savings_plans;
-  assert.ok(new Date(plans.autoSave.nextAt) > new Date(), "AutoSave moved on to its next date");
+  assert.deepEqual(moves.map((m) => `${m.source}:${m.status}`), ["paid:done"]);
   // The agent can't take savings out.
   await assert.rejects(walletFor(agent).writeContract({ address: savings, abi: bursarSavingsAbi, functionName: "withdraw", args: [0n, agent.address, 1n] } as any));
 
