@@ -18,6 +18,8 @@ export default function Start() {
   const w = useWallet();
   const [step, setStep] = useState<Step>("wallet");
   const [session, setSession] = useState<{ address: string | null; business: any } | null>(null);
+  // Every visit signs in again with the connected wallet, even if an old login is still saved.
+  const [signed, setSigned] = useState(false);
 
   useEffect(() => {
     api("/api/business").then((d) => {
@@ -29,10 +31,10 @@ export default function Start() {
   // Move forward as each piece falls into place.
   useEffect(() => {
     if (!w.address) return setStep("wallet");
-    if (!session?.address || session.address.toLowerCase() !== w.address.toLowerCase()) return setStep("signin");
+    if (!signed || !session?.address || session.address.toLowerCase() !== w.address.toLowerCase()) return setStep("signin");
     if (!session.business) return setStep("details");
     setStep("vault");
-  }, [w.address, session]);
+  }, [w.address, session, signed]);
 
   return (
     <div className="mx-auto max-w-xl px-6 py-10">
@@ -47,7 +49,13 @@ export default function Start() {
         ))}
       </ol>
       {step === "wallet" && <WalletStep />}
-      {step === "signin" && <SignInStep onDone={(b) => setSession({ address: w.address, business: b })} />}
+      {step === "signin" && <SignInStep
+          onDone={(b) => {
+            setSigned(true);
+            setSession({ address: w.address, business: b });
+            if ((b as any)?.vault_address) router.replace("/dashboard");
+          }}
+        />}
       {step === "details" && <DetailsStep onDone={async () => setSession({ address: w.address, business: (await api("/api/business")).business })} />}
       {step === "vault" && <VaultStep onDone={() => router.replace("/settings?new=1")} />}
     </div>
