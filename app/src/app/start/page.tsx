@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { parseEventLogs, parseUnits } from "viem";
+import { parseEventLogs, parseUnits, type Address } from "viem";
 import { signIn, useWallet } from "@/components/wallet";
 import { api, Field, Notice, short, useAction } from "@/components/ui";
 import { createLocalWallet, importLocalWallet, storedLocalAddress } from "@/lib/local-wallet";
@@ -213,8 +213,41 @@ function VaultStep({ onDone }: { onDone: () => void }) {
   const w = useWallet();
   const [maxPer, setMaxPer] = useState("0");
   const [floor, setFloor] = useState("0");
+  const [status, setStatus] = useState<string | null>(null);
+  const [existing, setExisting] = useState<Address[]>([]);
   const { busy, error, run } = useAction();
   const missing = !FACTORY || !AGENT_ADDRESS;
+
+  // A vault this wallet already made (say the page closed before it was saved) is reused, not made twice.
+  useEffect(() => {
+    if (!w.address || missing) return;
+    browserPublicClient
+      .readContract({ address: FACTORY, abi: bursarFactoryAbi, functionName: "vaultsOf", args: [w.address] })
+      .then((v) => setExisting([...v]))
+      .catch(() => {});
+  }, [w.address, missing]);
+
+  const useExisting = (vault: Address) =>
+    run(async () => {
+      setStatus("Saving your vault…");
+      await api("/api/business/vault", { method: "POST", json: { vault } });
+      onDone();
+    }).finally(() => setStatus(null));
+
+  if (existing.length)
+    return (
+      <div className="space-y-4">
+        <h1 className="h-page">Your business vault</h1>
+        <p className="text-sm text-body">
+          Your wallet already created a vault on Arc: <span className="font-mono">{existing[existing.length - 1]}</span>. Use it instead of making a new one.
+        </p>
+        <button className="btn" disabled={busy} onClick={() => useExisting(existing[existing.length - 1])}>
+          Use this vault
+        </button>
+        {status && <Notice>{status}</Notice>}
+        {error && <Notice kind="bad">{error}</Notice>}
+      </div>
+    );
 
   return (
     <div className="space-y-4">
@@ -250,22 +283,26 @@ function VaultStep({ onDone }: { onDone: () => void }) {
         onClick={() =>
           run(async () => {
             // After a page reload the wallet connection is gone; this reconnects it.
+            setStatus("Confirm the transaction in your wallet…");
             const client = await w.ensureClient();
             const hash = await client.writeContract({
               address: FACTORY,
               abi: bursarFactoryAbi,
               functionName: "createVault",
-              args: [AGENT_ADDRESS, parseUnits(maxPer, 6), parseUnits(floor, 6)],
+              args: [AGENT_ADDRESS, parseUnits(maxPer || "0", 6), parseUnits(floor || "0", 6)],
             });
+            setStatus(`Sent. Waiting for Arc to confirm it (${short(hash)})…`);
             const receipt = await browserPublicClient.waitForTransactionReceipt({ hash });
             if (!parseEventLogs({ abi: bursarFactoryAbi, logs: receipt.logs, eventName: "VaultCreated" }).length) throw new Error("Vault wasn't created.");
+            setStatus("Vault created. Saving it…");
             await api("/api/business/vault", { method: "POST", json: { txHash: hash } });
             onDone();
-          })
+          }).finally(() => setStatus(null))
         }
       >
-        Create vault
+        {busy ? "Working…" : "Create vault"}
       </button>
+      {status && <Notice>{status}</Notice>}
       {error && <Notice kind="bad">{error}</Notice>}
     </div>
   );
