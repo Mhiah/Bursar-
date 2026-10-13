@@ -208,15 +208,6 @@ function VaultStep({ onDone }: { onDone: () => void }) {
   const { busy, error, run } = useAction();
   const missing = !FACTORY || !AGENT_ADDRESS;
 
-  // After a page reload the wallet connection is gone, so ask for it again.
-  if (!w.client)
-    return (
-      <div className="space-y-4">
-        <Notice>Reconnect the wallet you signed in with to create your vault.</Notice>
-        <WalletStep />
-      </div>
-    );
-
   return (
     <div className="space-y-4">
       <h1 className="h-page">Create your business vault</h1>
@@ -247,10 +238,12 @@ function VaultStep({ onDone }: { onDone: () => void }) {
       {missing && <Notice kind="bad">This site isn't configured with a factory and agent address yet.</Notice>}
       <button
         className="btn"
-        disabled={busy || missing || !w.client}
+        disabled={busy || missing}
         onClick={() =>
           run(async () => {
-            const hash = await w.client!.writeContract({
+            // After a page reload the wallet connection is gone; this reconnects it.
+            const client = await w.ensureClient();
+            const hash = await client.writeContract({
               address: FACTORY,
               abi: bursarFactoryAbi,
               functionName: "createVault",

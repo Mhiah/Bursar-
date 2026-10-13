@@ -11,6 +11,8 @@ type Ctx = {
   kind: "injected" | "local" | null;
   client: Client | null;
   connectInjected: () => Promise<Address>;
+  /** The connected wallet, reconnecting the browser wallet first if the page was reloaded. */
+  ensureClient: () => Promise<Client>;
   unlockLocal: (password: string) => Promise<Address>;
   disconnect: () => void;
 };
@@ -49,15 +51,19 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [client, setClient] = useState<Client | null>(null);
   const [kind, setKind] = useState<Ctx["kind"]>(null);
 
-  const connectInjected = useCallback(async () => {
+  const openInjected = useCallback(async () => {
     if (!window.ethereum) throw new Error("No browser wallet found. Install one, or create a wallet here instead.");
     const [addr] = (await window.ethereum.request({ method: "eth_requestAccounts" })) as Address[];
     await switchToArc(window.ethereum);
     const c = createWalletClient({ account: addr, chain, transport: custom(window.ethereum) }) as unknown as Client;
     setClient(c);
     setKind("injected");
-    return addr;
+    return c;
   }, []);
+
+  const connectInjected = useCallback(async () => (await openInjected()).account.address, [openInjected]);
+
+  const ensureClient = useCallback(async () => client ?? openInjected(), [client, openInjected]);
 
   const unlockLocal = useCallback(async (password: string) => {
     const account = await unlockLocalWallet(password);
@@ -81,8 +87,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [kind, disconnect]);
 
   const value = useMemo<Ctx>(
-    () => ({ address: client?.account.address ?? null, kind, client, connectInjected, unlockLocal, disconnect }),
-    [client, kind, connectInjected, unlockLocal, disconnect],
+    () => ({ address: client?.account.address ?? null, kind, client, connectInjected, ensureClient, unlockLocal, disconnect }),
+    [client, kind, connectInjected, ensureClient, unlockLocal, disconnect],
   );
   return <WalletCtx.Provider value={value}>{children}</WalletCtx.Provider>;
 }
