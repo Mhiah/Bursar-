@@ -1,7 +1,7 @@
 import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod/v4";
 import type { Address, Hex } from "viem";
-import { newId, q } from "@/lib/db";
+import { newId, one, q } from "@/lib/db";
 import { logDecision } from "@/lib/decisions";
 import { categoryKey, type Flag } from "@/lib/bills";
 import type { Screening } from "@/lib/screening";
@@ -168,13 +168,23 @@ export function buildTools(ctx: ToolCtx) {
         if (!r) return "No open request with that id.";
         if (r.last_chased && Date.now() - new Date(r.last_chased).getTime() < settings.chaseEveryDays * 864e5)
           return `Not sent: last reminder was under ${settings.chaseEveryDays} days ago.`;
+        // A reminder that couldn't go out is tried again the next day, not on every run.
+        if (r.last_tried && Date.now() - new Date(r.last_tried).getTime() < 864e5) return "Not sent: already tried in the last day.";
         const allowed = channels.filter((c) => settings.chaseChannels.includes(c));
         if (!allowed.length) return "None of those channels are turned on for this business.";
         const text = `${message}\n\nPay here: ${ctx.appUrl}/pay/${r.id}`;
         const results: string[] = [];
         for (const ch of allowed) results.push(await recordChase(r, ch, text, subject));
-        if (results.some((x) => x.includes(": sent"))) r.last_chased = new Date().toISOString();
-        await logDecision(bid, "chase", `Reminded ${r.customer_name} about invoice ${r.invoice_no}`, reason, { requestId: r.id, results });
+        const sent = results.some((x) => x.includes(": sent"));
+        if (sent) r.last_chased = new Date().toISOString();
+        r.last_tried = new Date().toISOString();
+        await logDecision(
+          bid,
+          "chase",
+          sent ? `Reminded ${r.customer_name} about invoice ${r.invoice_no}` : `Couldn't remind ${r.customer_name} about invoice ${r.invoice_no}`,
+          sent ? reason : `${reason} Not sent: ${results.join("; ")}`,
+          { requestId: r.id, results },
+        );
         return results.join("; ");
       },
     }),
@@ -224,6 +234,12 @@ export function buildTools(ctx: ToolCtx) {
       description: "Record a decision to do nothing, or something the owner should know, in the decision log.",
       inputSchema: z.object({ summary: z.string(), reason }),
       run: async ({ summary, reason }) => {
+        // The agent runs on a timer, so don't fill the log with the same note every run.
+        const last = await one<{ kind: string; summary: string; created_at: string }>(
+          "SELECT kind, summary, created_at FROM decisions WHERE business_id = $1 ORDER BY seq DESC LIMIT 1",
+          [bid],
+        );
+        if (last?.kind === "note" && last.summary === summary && Date.now() - new Date(last.created_at).getTime() < 864e5) return "Noted (already in the log).";
         await logDecision(bid, "note", summary, reason);
         return "Noted.";
       },

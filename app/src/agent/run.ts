@@ -50,8 +50,19 @@ export const claudeDecider: Decider = async ({ system, prompt, tools }) => {
   return { summary, stop: final.stop_reason };
 };
 
+// One run at a time per business, so the timer and the "Run the agent now" button never overlap.
+const running = new Map<string, ReturnType<typeof runBusinessNow>>();
+
 /** One full pass for one business: money in, checks, then the decider chooses what to do. */
 export async function runBusiness(businessId: string, decide: Decider = claudeDecider) {
+  const busy = running.get(businessId);
+  if (busy) return busy;
+  const p = runBusinessNow(businessId, decide).finally(() => running.delete(businessId));
+  running.set(businessId, p);
+  return p;
+}
+
+async function runBusinessNow(businessId: string, decide: Decider) {
   const b = await one<Business>("SELECT * FROM businesses WHERE id = $1", [businessId]);
   if (!b?.vault_address) return { skipped: "no vault" };
   const vault = getAddress(b.vault_address) as Address;
@@ -120,7 +131,8 @@ export async function runBusiness(businessId: string, decide: Decider = claudeDe
   const reqRows = await q<any>(
     `SELECT r.*, c.name AS customer_name, c.email, c.telegram_chat_id, c.whatsapp,
        (SELECT max(created_at) FROM chases ch WHERE ch.request_id = r.id AND ch.status = 'sent') AS last_chased,
-       (SELECT count(*) FROM chases ch WHERE ch.request_id = r.id AND ch.status = 'sent') AS times_chased
+       (SELECT count(*) FROM chases ch WHERE ch.request_id = r.id AND ch.status = 'sent') AS times_chased,
+       (SELECT max(created_at) FROM chases ch WHERE ch.request_id = r.id) AS last_tried
      FROM payment_requests r JOIN customers c ON c.id = r.customer_id
      WHERE r.business_id = $1 AND r.status IN ('open','part_paid') ORDER BY r.due_date`,
     [b.id],
@@ -225,12 +237,12 @@ Be decisive and brief. Finish with one or two sentences summarising what you did
 }
 
 /** Every business whose vault has authorised this agent. */
-export async function runAll() {
+export async function runAll(decide: Decider = claudeDecider) {
   const rows = await q<{ id: string; name: string }>("SELECT id, name FROM businesses WHERE vault_address IS NOT NULL");
   const out: Record<string, unknown> = {};
   for (const r of rows) {
     try {
-      out[r.name] = await runBusiness(r.id);
+      out[r.name] = await runBusiness(r.id, decide);
     } catch (e) {
       out[r.name] = { error: e instanceof Error ? e.message : String(e) };
     }

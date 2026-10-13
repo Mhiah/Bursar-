@@ -6,6 +6,11 @@ import { useBusiness } from "@/components/business";
 import { api, AddressLink, Money, Notice, Status, TxLink, useAction, useApi } from "@/components/ui";
 import { AGENT_ADDRESS } from "@/lib/arc";
 import { Mark } from "@/components/mark";
+import { MOCK } from "@/lib/mock";
+
+const everyEnv = process.env.NEXT_PUBLIC_AGENT_EVERY_MINUTES;
+/** Matches agentEveryMinutes() on the server. */
+const every = everyEnv ? Math.max(0, Number(everyEnv) || 0) : MOCK ? 2 : 360;
 
 export default function Dashboard() {
   const { business, vault, reload } = useBusiness();
@@ -14,6 +19,12 @@ export default function Dashboard() {
   const log = useApi<{ decisions: any[] }>("/api/decisions?limit=8");
   const saved = useApi<{ savings: string | null; total: string | null }>("/api/savings");
   const agent = useAction();
+  // The agent also runs by itself, so keep this page up to date.
+  useEffect(() => {
+    const t = setInterval(() => Promise.all([reload(), reqs.reload(), bills.reload(), log.reload(), saved.reload()]).catch(() => {}), 30_000);
+    return () => clearInterval(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Money may have moved on another page (into savings, out of the vault), so read the vault fresh.
   useEffect(() => {
     reload();
@@ -43,6 +54,7 @@ export default function Dashboard() {
             Vault <AddressLink address={vault.address} />
           </p>
         </div>
+        <div className="flex flex-col items-end gap-1.5">
         <button
           className="btn-ink"
           disabled={agent.busy || !agentOn}
@@ -55,6 +67,8 @@ export default function Dashboard() {
         >
           {agent.busy ? "Agent is working…" : "Run the agent now"}
         </button>
+        {agentOn && every > 0 && <p className="text-xs text-muted">Runs by itself every {every >= 60 ? `${every / 60} hour${every === 60 ? "" : "s"}` : `${every} minute${every === 1 ? "" : "s"}`}.</p>}
+        </div>
       </div>
       {agent.error && <Notice kind="bad">{agent.error}</Notice>}
       {!agentOn && (

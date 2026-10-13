@@ -23,21 +23,25 @@ export const mockDecider: Decider = async ({ prompt, tools }) => {
   }
 
   for (const r of s.money_owed_to_business ?? []) {
-    if (r.days_overdue <= 0) continue;
+    // Late, or due within 2 days (a friendly heads-up). Not yet due: leave it.
+    if (r.days_overdue < -2) continue;
     if (!r.reachable_on?.length) continue;
-    const firm = r.times_chased >= 2;
-    await call("chase_customer", {
+    const late = r.days_overdue > 0;
+    const firm = late && r.times_chased >= 2;
+    const res = await call("chase_customer", {
       request_id: r.id,
       channels: r.reachable_on,
       subject: `Invoice ${r.invoice_no} from ${s.business}`,
       message: firm
         ? `Hi ${r.customer}, invoice ${r.invoice_no} for ${r.outstanding_usdc} USDC is now ${r.days_overdue} days late. Please pay it this week.`
-        : `Hi ${r.customer}, a friendly reminder that invoice ${r.invoice_no} for ${r.outstanding_usdc} USDC was due ${r.days_overdue} day(s) ago.`,
-      reason: `${r.days_overdue} day(s) overdue.`,
+        : late
+          ? `Hi ${r.customer}, a friendly reminder that invoice ${r.invoice_no} for ${r.outstanding_usdc} USDC was due ${r.days_overdue} day(s) ago.`
+          : `Hi ${r.customer}, a quick heads-up that invoice ${r.invoice_no} for ${r.outstanding_usdc} USDC is due ${r.days_overdue === 0 ? "today" : `in ${-r.days_overdue} day(s)`}.`,
+      reason: late ? `${r.days_overdue} day(s) overdue.` : "Due within 2 days.",
     });
-    done.push(`reminded ${r.customer} about ${r.invoice_no}`);
+    if (/: (sent|failed|skipped)/.test(res)) done.push(`reminded ${r.customer} about ${r.invoice_no}`);
   }
 
-  if (!done.length) await call("note", { summary: "Nothing needs doing right now.", reason: "No bills are due soon and nobody is late paying." });
+  if (!done.length) await call("note", { summary: "Nothing needs doing right now.", reason: "No bills are due soon, and every customer who is late or due soon has already had a reminder." });
   return { summary: `(Test AI) ${done.length ? done.join("; ") : "nothing needed doing"}.`, stop: "end_turn" };
 };
