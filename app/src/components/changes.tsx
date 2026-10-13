@@ -62,8 +62,8 @@ export function ChangesProvider({ children }: { children: ReactNode }) {
     sent: () => setVersion((v) => v + 1),
   };
 
-  // Rules & settings shows the list at the end of its own page.
-  const onSettings = usePathname() === "/settings";
+  // Rules & settings and Savings show the list lower down their own pages.
+  const onSettings = ["/settings", "/savings"].includes(usePathname());
   return (
     <ChangesContext.Provider value={ctx}>
       {!onSettings && <ChangesBar className="mb-6" />}

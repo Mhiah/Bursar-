@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAddress, isAddress, parseUnits, type Address } from "viem";
 import { useBusiness } from "@/components/business";
-import { useChanges } from "@/components/changes";
+import { ChangesBar, useChanges } from "@/components/changes";
 import { ConnectOwner, useOwnerSigner } from "@/components/signer";
 import { AddressLink, api, Field, Notice, useAction, useApi } from "@/components/ui";
 import { bursarSavingsAbi } from "@/lib/abi/BursarSavings";
@@ -181,6 +181,8 @@ function SavingsAccount({
 
       <SaveWhenPaid pots={pots} plans={plans} setup={setup} maxPerPayment={maxPerPayment} onSaved={async (msg) => { setDone(msg); await reload(); }} />
 
+      <ChangesBar />
+
       <section className="card space-y-3">
         <h2 className="h-section">Recent savings</h2>
         {!moves.length && <p className="text-sm text-muted">Nothing saved yet.</p>}
@@ -234,7 +236,7 @@ function SavingsBudget({ savings, setup, onSaved }: { savings: Address; setup: {
             }
             if (!setup?.approved) changes.add(`payee:${savings.toLowerCase()}`, "Let the agent move money into your savings", "setPayee", [savings, true]);
             changes.add("budget:savings", `Savings budget: ${limit || 0} USDC a month`, "setBudget", [categoryKey("savings"), units]);
-            onSaved("Savings budget saved. Approve all changes at the top of the page.");
+            onSaved("Savings budget saved. Approve all changes further down the page.");
           }}
         >
           Save
