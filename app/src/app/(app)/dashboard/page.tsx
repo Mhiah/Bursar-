@@ -8,6 +8,13 @@ import { AGENT_ADDRESS } from "@/lib/arc";
 import { Mark } from "@/components/mark";
 import { MOCK } from "@/lib/mock";
 
+/** Late only from the day after the due date. Due today is not late yet. */
+function isLate(due: string) {
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return String(due).slice(0, 10) < today;
+}
+
 const everyEnv = process.env.NEXT_PUBLIC_AGENT_EVERY_MINUTES;
 /** Matches agentEveryMinutes() on the server. */
 const every = everyEnv ? Math.max(0, Number(everyEnv) || 0) : MOCK ? 2 : 360;
@@ -32,7 +39,7 @@ export default function Dashboard() {
 
   const owed = (reqs.data?.requests ?? []).filter((r) => r.status === "open" || r.status === "part_paid");
   const owedTotal = owed.reduce((s, r) => s + Number(r.amount) - Number(r.paid_amount), 0);
-  const overdue = owed.filter((r) => new Date(r.due_date) < new Date());
+  const overdue = owed.filter((r) => isLate(r.due_date));
   const due = (bills.data?.bills ?? []).filter((b) => ["new", "scheduled", "held"].includes(b.status));
   const dueTotal = due.reduce((s, b) => s + Number(b.amount), 0);
   const waiting = (bills.data?.bills ?? []).filter((b) => b.status === "awaiting_approval");
@@ -156,7 +163,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Money className="text-sm" value={Number(r.amount) - Number(r.paid_amount)} />
-                      {new Date(r.due_date) < new Date() ? <span className="pill bg-bad-soft text-bad">late</span> : <Status value={r.status} />}
+                      {isLate(r.due_date) ? <span className="pill bg-bad-soft text-bad">late</span> : <Status value={r.status} />}
                     </div>
                   </li>
                 ))}
