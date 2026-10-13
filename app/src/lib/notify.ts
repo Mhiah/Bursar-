@@ -1,6 +1,13 @@
 export type Channel = "email" | "telegram" | "whatsapp";
 export type SendResult = { status: "sent" | "failed" | "skipped"; error?: string };
 
+/** "Name <address>" for Resend. Takes whatever address is in EMAIL_FROM, so a missing or mangled
+ * name part still works; without one it uses Resend's test sender. */
+function sender() {
+  const addr = (process.env.EMAIL_FROM || "").match(/[^\s<>"]+@[^\s<>"]+/)?.[0] || "onboarding@resend.dev";
+  return `Bursar <${addr}>`;
+}
+
 /** Email through Resend. */
 async function email(to: string, subject: string, text: string): Promise<SendResult> {
   const key = process.env.RESEND_API_KEY;
@@ -8,7 +15,7 @@ async function email(to: string, subject: string, text: string): Promise<SendRes
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: process.env.EMAIL_FROM, to, subject, text }),
+    body: JSON.stringify({ from: sender(), to, subject, text }),
   });
   return res.ok ? { status: "sent" } : { status: "failed", error: `${res.status} ${await res.text()}` };
 }

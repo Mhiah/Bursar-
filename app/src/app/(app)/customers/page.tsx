@@ -19,8 +19,6 @@ export default function Customers() {
         <div className="grid gap-3 md:grid-cols-3">
           <Field label="Name"><input className="input" value={form.name} onChange={set("name")} /></Field>
           <Field label="Email"><input className="input" value={form.email} onChange={set("email")} /></Field>
-          <Field label="WhatsApp number" hint="With country code, e.g. +2348012345678"><input className="input" value={form.whatsapp} onChange={set("whatsapp")} /></Field>
-          <Field label="Telegram chat ID" hint="They message your bot once; the ID shows in the bot's updates."><input className="input" value={form.telegram_chat_id} onChange={set("telegram_chat_id")} /></Field>
           <Field label="Their wallet (optional)" hint="Helps match payments to them."><input className="input font-mono" value={form.wallet_address} onChange={set("wallet_address")} /></Field>
         </div>
         <button
@@ -35,13 +33,13 @@ export default function Customers() {
       <section className="card overflow-x-auto">
         <table className="table">
           <thead>
-            <tr><th>Name</th><th>Reach on</th><th>Owes</th><th>Payment history</th></tr>
+            <tr><th>Name</th><th>Email</th><th>Owes</th><th>Payment history</th></tr>
           </thead>
           <tbody>
             {list.data?.customers.map((c) => (
               <tr key={c.id}>
                 <td>{c.name}</td>
-                <td className="text-xs text-muted">{[c.email && "email", c.telegram_chat_id && "Telegram", c.whatsapp && "WhatsApp"].filter(Boolean).join(", ") || "none"}</td>
+                <td className="text-xs text-muted">{c.email || "none"}</td>
                 <td><Money value={c.reliability.outstanding} /></td>
                 <td>
                   <span className="font-medium">{c.reliability.label}</span>
