@@ -128,7 +128,7 @@ export default function Settings() {
 
   return (
     <div className="space-y-8">
-      <h1 className="h-page">Rules & settings</h1>
+      <h1 className="h-page">Rules</h1>
       {isNew && (
         <Notice kind="ok">
           Your vault is ready. Save each part of this page, then approve everything once at the end. Add suppliers and approve their wallets, then add
