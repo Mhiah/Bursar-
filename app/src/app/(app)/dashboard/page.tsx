@@ -53,7 +53,7 @@ export default function Dashboard() {
       {agent.error && <Notice kind="bad">{agent.error}</Notice>}
       {!agentOn && (
         <Notice kind="warn">
-          The agent is {vault.paused ? "paused" : "not authorised on your vault"}. Turn it back on in <Link className="underline" href="/settings">Rules</Link>.
+          The agent is {vault.paused ? "paused" : "not authorised on your vault"}. Turn it back on in <Link className="underline" href="/settings">Rules & settings</Link>.
         </Notice>
       )}
 
