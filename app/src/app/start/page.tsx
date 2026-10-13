@@ -203,8 +203,8 @@ function DetailsStep({ onDone }: { onDone: () => void }) {
 
 function VaultStep({ onDone }: { onDone: () => void }) {
   const w = useWallet();
-  const [maxPer, setMaxPer] = useState("500");
-  const [floor, setFloor] = useState("200");
+  const [maxPer, setMaxPer] = useState("0");
+  const [floor, setFloor] = useState("0");
   const { busy, error, run } = useAction();
   const missing = !FACTORY || !AGENT_ADDRESS;
 

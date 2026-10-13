@@ -88,7 +88,7 @@ export const defaultSettings: Required<BusinessSettings> = {
   operatingDays: 30,
   maxInstalments: 3,
   maxInstalmentDays: 60,
-  minInstalmentAmount: 200,
+  minInstalmentAmount: 0,
   chaseChannels: ["email", "telegram", "whatsapp"],
   chaseEveryDays: 3,
   earlyPayDays: 7,
