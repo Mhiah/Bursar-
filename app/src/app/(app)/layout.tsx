@@ -11,8 +11,8 @@ import { api, useApi } from "@/components/ui";
 
 const nav = [
   ["/dashboard", "Overview"],
-  ["/invoices", "Invoices"],
   ["/customers", "Customers"],
+  ["/invoices", "Invoices"],
   ["/bills", "Bills"],
   ["/suppliers", "Suppliers"],
   ["/approvals", "Approvals"],
