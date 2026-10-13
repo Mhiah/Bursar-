@@ -40,7 +40,7 @@ Deploy the factory to Arc testnet: put `DEPLOYER_PRIVATE_KEY=0x...` in `contract
 
 ```bash
 npm run deploy:testnet
-npm run new-agent-wallet   # makes the agent's wallet and saves it to app/.env.local
+npm run new-agent-wallet   # only if you sign with a raw key instead of a Circle Agent Wallet
 ```
 
 Arc testnet: chain ID `5042002`, RPC `https://rpc.testnet.arc.io`, explorer `https://explorer.testnet.arc.io`. USDC's ERC-20 interface is at `0x3600000000000000000000000000000000000000` (6 decimals).
@@ -58,7 +58,13 @@ npm run agent                # agent worker, runs every AGENT_INTERVAL_SECONDS
 What to put in `.env.local`:
 
 - `NEXT_PUBLIC_FACTORY_ADDRESS`: the factory you deployed.
-- `NEXT_PUBLIC_AGENT_ADDRESS` and `AGENT_PRIVATE_KEY`: a fresh wallet just for the agent. Give it a little USDC for gas. It can only act inside each vault's rules.
+- `AGENT_SIGNER=circle` and `NEXT_PUBLIC_AGENT_ADDRESS`: the agent signs with a Circle Agent Wallet (Circle's Agent Stack), so no private key lives on the server. Set it up once from `app/`:
+  ```bash
+  npx circle wallet login you@example.com --type agent   # emails a code; first login also makes the wallet
+  npx circle wallet list --chain ARC                      # shows the agent's address
+  ```
+  Put that address in `NEXT_PUBLIC_AGENT_ADDRESS`. The agent calls the vault with `circle wallet execute`; Circle sponsors its gas (capped). It can only act inside each vault's rules.
+- Or leave `AGENT_SIGNER` empty and set `NEXT_PUBLIC_AGENT_ADDRESS` and `AGENT_PRIVATE_KEY` from `npm run new-agent-wallet` (give it a little USDC for gas).
 - `ANTHROPIC_API_KEY`: for Claude's decisions.
 - `SESSION_SECRET`: any long random string.
 - `DATABASE_URL`: a Postgres URL. Without it the site uses a local file database, which only one process can open, so use the dashboard's "Run the agent now" button instead of `npm run agent`.

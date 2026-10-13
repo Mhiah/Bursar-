@@ -25,6 +25,7 @@
     "@anthropic-ai/sdk": "^0.133.0",
     "@circle-fin/adapter-viem-v2": "^1.19.0",
     "@circle-fin/app-kit": "^1.16.0",
+    "@circle-fin/cli": "1.2.1",
     "@electric-sql/pglite": "^0.2.15",
     "@types/react-dom": "^18.3.1",
     "next": "^14.2.18",
