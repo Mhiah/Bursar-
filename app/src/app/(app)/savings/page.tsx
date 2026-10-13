@@ -31,7 +31,7 @@ export default function Savings() {
     <div className="space-y-8">
       <h1 className="h-page">Savings</h1>
       <p className="max-w-2xl text-sm text-muted">
-        Your business's savings, kept apart from the vault in an account only you own. The agent can put money into your pots but can never take it out.
+        Your business's savings, kept apart from the vault in an account only you own. The agent can put money into your savings pots but can never take it out.
       </p>
       {!SAVINGS_FACTORY ? (
         <Notice kind="warn">Savings isn't set up on this site yet.</Notice>
@@ -66,7 +66,7 @@ function OpenSavings({ owner, onDone }: { owner: string; onDone: () => Promise<v
     <section className="card space-y-4">
       <div>
         <h2 className="h-section">Open your savings account</h2>
-        <p className="text-sm text-muted">One approval in your wallet. After that you can make pots: Flex, Locked and Target.</p>
+        <p className="text-sm text-muted">One approval in your wallet. After that you can make savings pots: Flex, Locked and Target.</p>
       </div>
       <ConnectOwner owner={owner} />
       {act.error && <Notice kind="bad">{act.error}</Notice>}
@@ -160,15 +160,15 @@ function SavingsAccount({
         <p className="font-serif text-4xl">{fromUnits(total)} USDC</p>
         <p className="text-xs text-muted">
           Savings account <AddressLink address={savings} />
-          {unassigned > 0n && <> · {fromUnits(unassigned)} USDC arriving, not in a pot yet</>}
+          {unassigned > 0n && <> · {fromUnits(unassigned)} USDC arriving, not in a savings pot yet</>}
         </p>
       </section>
 
       <SavingsBudget savings={savings} setup={setup} onSaved={setDone} />
 
       <section className="space-y-4">
-        <h2 className="h-section">Your pots</h2>
-        {!pots.length && <p className="text-sm text-muted">No pots yet. Make your first one below.</p>}
+        <h2 className="h-section">Your savings pots</h2>
+        {!pots.length && <p className="text-sm text-muted">No savings pots yet. Make your first one below.</p>}
         <div className="grid gap-4 md:grid-cols-2">
           {pots.map((p) => (
             <PotCard key={p.id} p={p} savings={savings} vault={vault} owner={owner} signerReady={signer.ready} client={signer.client} onDone={async (msg) => { setDone(msg); await refresh(); }} />
@@ -186,7 +186,7 @@ function SavingsAccount({
           {moves.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
               <span>
-                {fromUnits(m.amount)} USDC to {pots[m.pot]?.name ?? `pot ${m.pot + 1}`} ·{" "}
+                {fromUnits(m.amount)} USDC to {pots[m.pot]?.name ?? `savings pot ${m.pot + 1}`} ·{" "}
                 <span className="text-muted">{{ auto: "AutoSave", paid: "Save when paid", owner: "You" }[m.source as string] ?? m.source}</span>
               </span>
               <span className={`text-xs ${m.status === "failed" ? "text-bad" : "text-muted"}`}>
@@ -344,7 +344,7 @@ function NewPot({ savings, owner, onDone }: { savings: Address; owner: string; o
   const [f, setF] = useState({ name: "", kind: "Flex" as (typeof KINDS)[number], goal: "", unlock: "" });
   return (
     <div className="card space-y-4">
-      <h3 className="h-section">New pot</h3>
+      <h3 className="h-section">New savings pot</h3>
       <div className="grid gap-3 md:grid-cols-4">
         <Field label="Name">
           <input className="input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
@@ -380,11 +380,11 @@ function NewPot({ savings, owner, onDone }: { savings: Address; owner: string; o
             const unlockAt = f.kind === "Locked" ? BigInt(Math.floor(new Date(`${f.unlock}T00:00:00`).getTime() / 1000)) : 0n;
             await savingsCall(signer.client!, savings, "createPot", [f.name.trim(), kind, goal, unlockAt]);
             setF({ name: "", kind: "Flex", goal: "", unlock: "" });
-            await onDone(`Pot "${f.name.trim()}" made.`);
+            await onDone(`Savings pot "${f.name.trim()}" made.`);
           })
         }
       >
-        {act.busy ? "Working…" : "Make pot"}
+        {act.busy ? "Working…" : "Make savings pot"}
       </button>
     </div>
   );

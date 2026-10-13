@@ -33,7 +33,7 @@ async function potName(savings: Address, pot: number) {
     const p = await publicClient.readContract({ address: savings, abi: bursarSavingsAbi, functionName: "pot", args: [BigInt(pot)] });
     return p.name;
   } catch {
-    return `pot ${pot + 1}`;
+    return `savings pot ${pot + 1}`;
   }
 }
 
@@ -61,7 +61,7 @@ export async function runSavings(b: Business, vault: Address) {
     const tx = await sendAllocate(savings, BigInt(m.pot), BigInt(m.amount));
     if (!tx.ok) continue;
     await q("UPDATE savings_moves SET status = 'done', tx_hash = COALESCE(tx_hash, $1) WHERE id = $2", [tx.hash, m.id]);
-    await logDecision(b.id, "save", `Put ${fromUnits(m.amount)} USDC into ${await potName(savings, m.pot)}`, "Money you sent to savings went into the pot you chose.", {
+    await logDecision(b.id, "save", `Put ${fromUnits(m.amount)} USDC into ${await potName(savings, m.pot)}`, "Money you sent to savings went into the savings pot you chose.", {
       moveId: m.id,
       tx: tx.hash,
     });

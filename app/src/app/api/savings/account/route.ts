@@ -23,7 +23,7 @@ export const POST = handler(async (req: Request) => {
   });
   if (!mine.some((s) => getAddress(s) === getAddress(savings))) throw new HttpError(400, "That savings account wasn't created by your wallet.");
   await q("UPDATE businesses SET savings_address = $1 WHERE id = $2", [getAddress(savings), b.id]);
-  await logDecision(b.id, "note", "Savings account opened", `Savings ${getAddress(savings)} is owned by your wallet. The agent can put money into its pots but can never take it out.`, {
+  await logDecision(b.id, "note", "Savings account opened", `Savings ${getAddress(savings)} is owned by your wallet. The agent can put money into its savings pots but can never take it out.`, {
     savings: getAddress(savings),
   });
   return { savings: getAddress(savings) };
