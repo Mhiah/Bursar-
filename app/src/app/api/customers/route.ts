@@ -2,6 +2,8 @@ import { getAddress, isAddress } from "viem";
 import { z } from "zod";
 import { body, handler, requireBusiness } from "@/lib/api";
 import { newId, q } from "@/lib/db";
+import { logDecision } from "@/lib/decisions";
+import { sanctionsCheck } from "@/lib/screening";
 import { customerReliability } from "@/lib/reliability";
 import { fromUnits } from "@/lib/money";
 
@@ -34,5 +36,13 @@ export const POST = handler(async (req: Request) => {
     "INSERT INTO customers (id, business_id, name, email, telegram_chat_id, whatsapp, wallet_address) VALUES ($1,$2,$3,$4,$5,$6,$7)",
     [id, b.id, c.name, c.email || null, c.telegram_chat_id || null, c.whatsapp || null, c.wallet_address ? getAddress(c.wallet_address) : null],
   );
-  return { id };
+  // Check their wallet as it's added, like a supplier's.
+  const screening = c.wallet_address ? await sanctionsCheck(c.wallet_address) : null;
+  if (screening?.status === "blocked") {
+    await logDecision(b.id, "attention", `${c.name}'s wallet is on a sanctions list`, `${screening.reasons.map((r) => r.detail).join(" ")} Payments from it will be flagged.`, {
+      wallet: c.wallet_address,
+      screening,
+    });
+  }
+  return { id, screening };
 });

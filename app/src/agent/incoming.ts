@@ -15,7 +15,7 @@ const FIRST_LOOKBACK = 20_000n;
  * and match it to an open payment request when the match is certain. */
 export async function syncIncoming(b: Business) {
   const vault = getAddress(b.vault_address!) as Address;
-  const latest = await publicClient.getBlockNumber();
+  const latest = await publicClient.getBlockNumber({ cacheTime: 0 });
   let from = b.last_block ? BigInt(b.last_block) + 1n : latest > FIRST_LOOKBACK ? latest - FIRST_LOOKBACK : 0n;
   const found: { id: string; from: Address; amount: bigint }[] = [];
 
@@ -99,5 +99,15 @@ export async function applyPayment(businessId: string, paymentId: string, reques
     reason,
     { paymentId, requestId },
   );
+  if (paid > BigInt(r.amount)) {
+    const extra = fromUnits(paid - BigInt(r.amount));
+    await logDecision(
+      businessId,
+      "attention",
+      `Invoice ${r.invoice_no} was overpaid by ${extra} USDC`,
+      `The customer sent more than they owed. Decide whether to send the ${extra} USDC back or keep it as credit for their next invoice.`,
+      { paymentId, requestId, extra },
+    );
+  }
   return done ? "Matched; invoice paid in full" : `Matched; ${fromUnits(BigInt(r.amount) - paid)} USDC still due`;
 }

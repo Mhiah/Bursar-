@@ -9,6 +9,7 @@ export default function Customers() {
   const list = useApi<{ customers: any[] }>("/api/customers");
   const [form, setForm] = useState(empty);
   const add = useAction();
+  const [warn, setWarn] = useState<string | null>(null);
   const set = (k: keyof typeof empty) => (e: any) => setForm({ ...form, [k]: e.target.value });
 
   return (
@@ -24,11 +25,17 @@ export default function Customers() {
         <button
           className="btn"
           disabled={add.busy}
-          onClick={() => add.run(async () => { await api("/api/customers", { method: "POST", json: form }); setForm(empty); await list.reload(); })}
+          onClick={() => add.run(async () => {
+            const res = await api("/api/customers", { method: "POST", json: form });
+            setWarn(res.screening?.status === "blocked" ? `${form.name}'s wallet is on a sanctions list. Payments from it will be flagged.` : null);
+            setForm(empty);
+            await list.reload();
+          })}
         >
           Add customer
         </button>
         {add.error && <Notice kind="bad">{add.error}</Notice>}
+        {warn && <Notice kind="bad">{warn}</Notice>}
       </section>
       <section className="card overflow-x-auto">
         <table className="table">

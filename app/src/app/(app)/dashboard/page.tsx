@@ -24,11 +24,12 @@ export default function Dashboard() {
   const reqs = useApi<{ requests: any[]; unmatched: any[] }>("/api/requests");
   const bills = useApi<{ bills: any[] }>("/api/bills");
   const log = useApi<{ decisions: any[] }>("/api/decisions?limit=8");
+  const stats = useApi<any>("/api/stats");
   const saved = useApi<{ savings: string | null; total: string | null }>("/api/savings");
   const agent = useAction();
   // The agent also runs by itself, so keep this page up to date.
   useEffect(() => {
-    const t = setInterval(() => Promise.all([reload(), reqs.reload(), bills.reload(), log.reload(), saved.reload()]).catch(() => {}), 30_000);
+    const t = setInterval(() => Promise.all([reload(), reqs.reload(), bills.reload(), log.reload(), saved.reload(), stats.reload()]).catch(() => {}), 30_000);
     return () => clearInterval(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -68,7 +69,7 @@ export default function Dashboard() {
           onClick={() =>
             agent.run(async () => {
               await api("/api/agent/run", { method: "POST" });
-              await Promise.all([reload(), reqs.reload(), bills.reload(), log.reload(), saved.reload()]);
+              await Promise.all([reload(), reqs.reload(), bills.reload(), log.reload(), saved.reload(), stats.reload()]);
             })
           }
         >
@@ -92,6 +93,26 @@ export default function Dashboard() {
         <Stat label="Bills to pay" value={<Money value={dueTotal} />} sub={`${due.length} waiting`} />
         <Stat label="Saved" value={<Money value={saved.data?.total ?? 0} />} sub={saved.data?.savings ? "In your savings pots →" : "Open savings →"} href="/savings" />
       </div>
+
+      {stats.data && (
+        <section className="card">
+          <h2 className="h-section">The agent&apos;s record</h2>
+          <p className="mb-4 text-sm text-muted">Counted from what actually happened in your vault.</p>
+          <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Fact label="Received from customers" value={<Money value={stats.data.received} />} />
+            <Fact label="Paid to suppliers" value={<Money value={stats.data.paidOut} />} />
+            <Fact label="Bills paid on time with no human" value={`${stats.data.billsOnTimeByAgent} of ${stats.data.billsPaid}`} />
+            <Fact label="Reminders sent" value={stats.data.remindersSent} />
+            <Fact label="Decided by the agent" value={stats.data.decisionsByAgent} />
+            <Fact label="Passed to you" value={stats.data.passedToYou} />
+            <Fact
+              label="Payments you approved"
+              value={stats.data.youAgreed === null ? "None asked yet" : `${stats.data.youAgreed}% of ${stats.data.youDecided}`}
+            />
+            <Fact label="Saved for you" value={<Money value={stats.data.saved} />} />
+          </div>
+        </section>
+      )}
 
       {waiting.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-clay-line bg-clay-soft px-6 py-4">
@@ -189,9 +210,19 @@ const kinds: Record<string, [string, string]> = {
   match: ["Matched", "text-brand"],
   save: ["Saved", "text-brand"],
   note: ["Note", "text-muted"],
+  attention: ["Needs you", "text-bad"],
 };
 const kindLabel = (k: string) => kinds[k]?.[0] ?? k;
 const kindTone = (k: string) => kinds[k]?.[1] ?? "text-muted";
+
+function Fact({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="label">{label}</p>
+      <p className="text-lg">{value}</p>
+    </div>
+  );
+}
 
 function Stat({ label, value, sub, big, href }: { label: string; value: React.ReactNode; sub: string; big?: boolean; href?: string }) {
   const inner = (

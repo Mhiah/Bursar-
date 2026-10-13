@@ -9,6 +9,9 @@ import { send as sendMessage, type Channel } from "@/lib/notify";
 import { fromUnits, toUnits } from "@/lib/money";
 import type { BusinessSettings } from "@/lib/session";
 import { applyPayment } from "./incoming";
+
+/** Reminders per invoice before the agent stops and tells the owner. */
+export const MAX_REMINDERS = 3;
 import { dryRun, send } from "./wallet";
 
 export type BillCtx = {
@@ -166,6 +169,21 @@ export function buildTools(ctx: ToolCtx) {
       run: async ({ request_id, channels, subject, message, reason }) => {
         const r = reqById.get(request_id);
         if (!r) return "No open request with that id.";
+        // After this many reminders, more of them won't help: hand it to the owner, once.
+        if (Number(r.times_chased) >= MAX_REMINDERS) {
+          if (!r.chasing_stopped_at) {
+            r.chasing_stopped_at = new Date().toISOString();
+            await q("UPDATE payment_requests SET chasing_stopped_at = now() WHERE id = $1", [r.id]);
+            await logDecision(
+              bid,
+              "attention",
+              `Stopped chasing ${r.customer_name} about invoice ${r.invoice_no}`,
+              `They've had ${r.times_chased} reminders and still owe ${fromUnits(BigInt(r.amount) - BigInt(r.paid_amount))} USDC. Over to you: call them, agree a plan, or cancel the invoice.`,
+              { requestId: r.id },
+            );
+          }
+          return `Not sent: already reminded ${r.times_chased} times, so the owner has been told instead.`;
+        }
         if (r.last_chased && Date.now() - new Date(r.last_chased).getTime() < settings.chaseEveryDays * 864e5)
           return `Not sent: last reminder was under ${settings.chaseEveryDays} days ago.`;
         // A reminder that couldn't go out is tried again the next day, not on every run.

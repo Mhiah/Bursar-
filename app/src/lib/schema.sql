@@ -153,3 +153,8 @@ CREATE TABLE IF NOT EXISTS savings_moves (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_savings_moves_business ON savings_moves (business_id, created_at DESC);
+
+-- When the agent stopped chasing an invoice and handed it to the owner.
+ALTER TABLE payment_requests ADD COLUMN IF NOT EXISTS chasing_stopped_at TIMESTAMPTZ;
+-- When every wallet the business deals with was last re-checked.
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS wallets_checked_at TIMESTAMPTZ;

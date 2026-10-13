@@ -10,7 +10,8 @@ import { defaultSettings, type Business } from "@/lib/session";
 import { syncApprovals } from "@/lib/approvals";
 import { syncIncoming } from "./incoming";
 import { runSavings } from "./savings";
-import { buildTools, daysUntil, type BillCtx } from "./tools";
+import { buildTools, daysUntil, MAX_REMINDERS, type BillCtx } from "./tools";
+import { recheckWallets } from "./recheck";
 import { dryRun, send, agentAddress } from "./wallet";
 import { aiClient, useBlockRun } from "./ai";
 
@@ -74,6 +75,7 @@ async function runBusinessNow(businessId: string, decide: Decider) {
 
   const received = await syncIncoming(b);
   await syncApprovals(b.id, vault);
+  await recheckWallets(b);
   const startHead = await one<{ hash: string }>("SELECT hash FROM decisions WHERE business_id = $1 ORDER BY seq DESC LIMIT 1", [b.id]);
   const saved = await runSavings(b, vault);
 
@@ -191,6 +193,7 @@ async function runBusinessNow(businessId: string, decide: Decider) {
       days_overdue: -daysUntil(String(r.due_date).slice(0, 10)),
       instalment_plan: r.instalments,
       times_chased: Number(r.times_chased),
+      chasing_stopped: !!r.chasing_stopped_at,
       last_chased: r.last_chased,
       reachable_on: [r.email && "email", r.telegram_chat_id && "telegram", r.whatsapp && "whatsapp"].filter(Boolean),
       payment_history: { ...r.reliability, outstanding: fromUnits(r.reliability.outstanding) },
@@ -212,6 +215,7 @@ How to decide:
 - Pay bills due within 3 days. Pay early only when cash is comfortable after ${settings.operatingDays} days of bills and the bill is due within ${settings.earlyPayDays} days.
 - Anything flagged, with a wallet check that isn't clear, or that the vault would refuse goes to request_approval with a clear reason. Never try to get around a check.
 - Surplus beyond the next ${settings.operatingDays} days of bills (and money expected in that might not arrive) can move to reserve. Move round amounts, and don't shuffle money back and forth in the same run.
+- After ${MAX_REMINDERS} reminders on an invoice, chasing stops and the owner is told (chasing_stopped); don't chase those.
 - Chase overdue invoices in order of size and risk. Use the payment history: be warm with reliable customers, firm with repeat late payers. Don't chase invoices that aren't due yet unless due within 2 days. Offer instalments to customers who are well overdue or have been chased several times, within the owner's limits.
 - Match unmatched payments only when you're confident; otherwise leave them.
 - Every action needs a reason the owner would understand. If nothing needs doing, call note once to say so and why.

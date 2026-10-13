@@ -229,6 +229,34 @@ async function main() {
   await syncApprovals(bid, vault);
   assert.equal((await one("SELECT status FROM bills WHERE id = $1", [big]))!.status, "paid");
 
+  // ---------------------------------------------------------------- run 2: stop chasing, overpayment, the agent's record
+  // INV-2 has had three reminders: the agent stops and tells the owner, once.
+  for (let i = 0; i < 3; i++)
+    await q("INSERT INTO chases (id, business_id, request_id, channel, message, status, created_at) VALUES ($1,$2,$3,'email','x','sent', now() - interval '30 days')", [newId(), bid, late]);
+  const over = newId();
+  await q("INSERT INTO payment_requests (id, business_id, customer_id, invoice_no, amount, due_date) VALUES ($1,$2,$3,$4,$5,$6)", [
+    over, bid, cid, "INV-3", usd(7).toString(), "2026-12-01",
+  ]);
+  await tx(customer, usdc.address, usdc.abi, "transfer", [vault, usd(9)]);
+  const run2: string[] = [];
+  const decide2 = async ({ tools, prompt }: any) => {
+    const sit = JSON.parse(prompt.slice(prompt.indexOf("{")));
+    const call = async (name: string, input: any) => run2.push(String(await tools.find((x: any) => x.name === name)!.run(input)));
+    await call("chase_customer", { request_id: late, channels: ["email"], subject: "Again", message: "Again.", reason: "Overdue." });
+    const pay = sit.unmatched_payments.find((p: any) => Number(p.amount_usdc) === 9);
+    await call("match_payment", { payment_id: pay.id, request_id: over, reason: "Ada's wallet, close to INV-3." });
+    return { summary: "scripted 2", stop: "end_turn" };
+  };
+  await runBusiness(bid, decide2);
+  assert.match(run2[0], /already reminded 3 times/);
+  await runBusiness(bid, async ({ tools }) => {
+    run2.push(String(await tools.find((x) => x.name === "chase_customer")!.run({ request_id: late, channels: ["email"], subject: "x", message: "x", reason: "x" } as never)));
+    return { summary: "scripted 3", stop: "end_turn" };
+  });
+  const attention = await q<{ summary: string }>("SELECT summary FROM decisions WHERE business_id = $1 AND kind = 'attention' ORDER BY seq", [bid]);
+  assert.equal(attention.filter((a) => /Stopped chasing Ada about invoice INV-2/.test(a.summary)).length, 1, "the owner is told once");
+  assert.ok(attention.some((a) => /INV-3 was overpaid by 2(\.00)? USDC/.test(a.summary)), "an overpayment is flagged");
+
   // Decision log is intact and its head was written onchain.
   const integrity = await verifyLog(bid);
   assert.ok(integrity.ok, "decision log hashes check out");

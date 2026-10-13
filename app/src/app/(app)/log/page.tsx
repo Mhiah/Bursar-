@@ -5,7 +5,7 @@ import { Notice, TxLink, useApi } from "@/components/ui";
 
 const kinds: Record<string, string> = {
   pay: "Paid", early_pay: "Paid early", hold: "Held", approval: "Asked you", block: "Blocked", reserve: "Reserve",
-  release: "Reserve", chase: "Chased", instalment: "Instalments", screen: "Wallet check", match: "Matched", save: "Saved", note: "Note",
+  release: "Reserve", chase: "Chased", instalment: "Instalments", screen: "Wallet check", match: "Matched", save: "Saved", note: "Note", attention: "Needs you",
 };
 
 export default function Log() {
