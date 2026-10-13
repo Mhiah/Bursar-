@@ -208,6 +208,15 @@ function VaultStep({ onDone }: { onDone: () => void }) {
   const { busy, error, run } = useAction();
   const missing = !FACTORY || !AGENT_ADDRESS;
 
+  // After a page reload the wallet connection is gone, so ask for it again.
+  if (!w.client)
+    return (
+      <div className="space-y-4">
+        <Notice>Reconnect the wallet you signed in with to create your vault.</Notice>
+        <WalletStep />
+      </div>
+    );
+
   return (
     <div className="space-y-4">
       <h1 className="h-page">Create your business vault</h1>
