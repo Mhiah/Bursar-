@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { createWalletClient, custom, getAddress, parseUnits, type Address } from "viem";
 import { switchToArc } from "@/components/wallet";
-import { Field, Money, Notice, Status, TxLink, useAction, useApi } from "@/components/ui";
+import { api, Field, Money, Notice, Status, TxLink, useAction, useApi } from "@/components/ui";
 import { appKitChain, bridgeSources, chain, EURC, network, USDC } from "@/lib/arc";
 import { browserPublicClient } from "@/lib/owner-tx";
 import { fromUnits } from "@/lib/money";
+import { MOCK } from "@/lib/mock";
 
 const erc20 = [
   { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "a", type: "address" }], outputs: [{ type: "uint256" }] },
@@ -121,7 +122,7 @@ export default function Pay({ params }: { params: { id: string } }) {
       <div className="rounded-2xl border border-rule bg-card px-7 pb-6 pt-7">
         <p className="text-sm text-muted">{d.business} asks for payment</p>
         <p className="mt-2 font-serif text-6xl leading-none">
-          {Number(d.outstanding).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} <span className="text-2xl text-muted">USDC</span>
+          {Number(d.status === "paid" ? d.amount : d.outstanding).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} <span className="text-2xl text-muted">USDC</span>
         </p>
         <div className="mt-5 space-y-1.5 border-t border-dashed border-line pt-4 text-sm">
           <Row k="Invoice"><span className="font-mono">{d.invoiceNo}</span></Row>
@@ -176,6 +177,21 @@ export default function Pay({ params }: { params: { id: string } }) {
                 {bridgeSources.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
               </select>
             </Field>
+          )}
+          {MOCK && (
+            <button
+              className="btn w-full py-3.5 font-semibold"
+              disabled={act.busy}
+              onClick={() =>
+                act.run(async () => {
+                  const res = await api(`/api/mock/pay/${params.id}`, { method: "POST", json: { amount } });
+                  setSent({ hash: res.txHash, note: `A test customer paid ${amount} test USDC.` });
+                  await inv.reload();
+                })
+              }
+            >
+              {act.busy ? "Paying…" : `Pay ${amount} USDC as a test customer`}
+            </button>
           )}
           {!account ? (
             <button className="btn-ink w-full py-3.5 font-semibold" disabled={act.busy} onClick={connect}>Connect wallet and pay {amount}</button>

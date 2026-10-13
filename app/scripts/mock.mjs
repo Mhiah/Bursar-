@@ -67,6 +67,7 @@ const env = {
   ARC_RPC_URL: RPC,
   BURSAR_DATA_DIR: data,
   DATABASE_URL: "",
+  CHAINALYSIS_API_KEY: "",
   SESSION_SECRET: "bursar-test-mode-only-not-a-real-secret",
   NEXT_DIST_DIR: ".next-mock",
 };

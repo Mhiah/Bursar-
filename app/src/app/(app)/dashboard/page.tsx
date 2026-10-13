@@ -49,7 +49,7 @@ export default function Dashboard() {
           onClick={() =>
             agent.run(async () => {
               await api("/api/agent/run", { method: "POST" });
-              await Promise.all([reload(), reqs.reload(), bills.reload(), log.reload()]);
+              await Promise.all([reload(), reqs.reload(), bills.reload(), log.reload(), saved.reload()]);
             })
           }
         >

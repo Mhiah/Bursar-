@@ -1,6 +1,7 @@
 import { getAddress, parseAbiItem, type Address } from "viem";
 import { publicClient } from "./chain";
 import { USDC } from "./arc";
+import { MOCK } from "./mock";
 import { one, q } from "./db";
 
 export type Reason = { code: string; detail: string };
@@ -11,7 +12,8 @@ const DAY = 24 * 3600 * 1000;
 /** Chainalysis free sanctions API. Returns the listed identifications, or null if the check couldn't run. */
 async function chainalysis(addr: Address): Promise<{ name: string; category: string }[] | null> {
   const key = process.env.CHAINALYSIS_API_KEY;
-  if (!key) return null;
+  // Test mode has no key: fake wallets on the local test chain are never on a sanctions list.
+  if (!key) return MOCK ? [] : null;
   try {
     const res = await fetch(`https://public.chainalysis.com/api/v1/address/${addr}`, {
       headers: { "X-API-Key": key, Accept: "application/json" },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api, Field, Money, Notice, Status, AddressLink, useAction, useApi } from "@/components/ui";
 
 export default function Invoices() {
@@ -8,6 +8,7 @@ export default function Invoices() {
   const customers = useApi<{ customers: any[] }>("/api/customers");
   const [form, setForm] = useState({ customer_id: "", invoice_no: "", description: "", amount: "", due_date: "" });
   const [copied, setCopied] = useState<string | null>(null);
+  const [qr, setQr] = useState<string | null>(null);
   const add = useAction();
   const act = useAction();
   const set = (k: keyof typeof form) => (e: any) => setForm({ ...form, [k]: e.target.value });
@@ -97,6 +98,10 @@ export default function Invoices() {
                       >
                         {copied === r.id ? "Copied" : "Copy pay link"}
                       </button>
+                      <button className="ml-3 text-xs text-brand" onClick={() => setQr(qr === r.id ? null : r.id)}>
+                        {qr === r.id ? "Hide QR code" : "QR code"}
+                      </button>
+                      {qr === r.id && <PayQr url={link(r.id)} invoiceNo={r.invoice_no} />}
                       <button
                         className="ml-3 text-xs text-muted"
                         onClick={() => act.run(async () => { await api(`/api/requests/${r.id}`, { method: "PATCH", json: { action: "cancel" } }); await reqs.reload(); })}
@@ -153,6 +158,24 @@ export default function Invoices() {
         </section>
       )}
       {act.error && <Notice kind="bad">{act.error}</Notice>}
+    </div>
+  );
+}
+
+/** A QR code customers can scan to open this invoice's pay page. */
+function PayQr({ url, invoiceNo }: { url: string; invoiceNo: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    import("qrcode").then((q) => q.toDataURL(url, { margin: 1, width: 360 })).then(setSrc).catch(() => setSrc(null));
+  }, [url]);
+  if (!src) return null;
+  return (
+    <div className="mt-3 flex flex-col items-end gap-2">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={`QR code to pay invoice ${invoiceNo}`} className="h-44 w-44 rounded-lg border border-rule bg-white p-2" />
+      <a className="text-xs text-brand" href={src} download={`pay-${invoiceNo}.png`}>
+        Download QR code
+      </a>
     </div>
   );
 }

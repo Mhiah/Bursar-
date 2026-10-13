@@ -1,5 +1,7 @@
 import { handler, HttpError, requireBusiness } from "@/lib/api";
 import { runBusiness } from "@/agent/run";
+import { mockDecider } from "@/agent/mock-decider";
+import { MOCK } from "@/lib/mock";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -8,5 +10,6 @@ export const maxDuration = 300;
 export const POST = handler(async () => {
   const b = await requireBusiness();
   if (!b.vault_address) throw new HttpError(400, "Create your vault first.");
-  return runBusiness(b.id);
+  // Test mode uses a pretend AI so no real AI calls are paid for.
+  return MOCK ? runBusiness(b.id, mockDecider) : runBusiness(b.id);
 });
