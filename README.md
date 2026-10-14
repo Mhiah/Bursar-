@@ -53,8 +53,8 @@ All rule changes go in one owner transaction (Multicall).
 
 | Contract | Address |
 | --- | --- |
-| BursarFactory | `0x13c95c918599b33Cbae7bb32d9C4920993E4713f` |
-| BursarSavingsFactory | `0x1EE09d0f5d435c38414B0e842A3f62a3842Efb70` |
+| BursarFactory | `0x1d872C07C1935fe5E3a28a9df0690C2caf7B5709` |
+| BursarSavingsFactory | `0xe7395461185d3d8964dDaA29B31b963Cfb96CB1c` |
 
 ## Try it without real money
 
