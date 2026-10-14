@@ -1,4 +1,5 @@
-import { IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Mono, Nanum_Gothic } from "next/font/google";
 
-// Headings and text use the device's own system font; numbers use IBM Plex Mono.
+// Headings and text: the device's system font, with Nanum Gothic loaded for devices that have none of them (most Windows PCs).
+export const nanum = Nanum_Gothic({ subsets: ["latin"], weight: ["400", "700", "800"], variable: "--font-nanum" });
 export const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });

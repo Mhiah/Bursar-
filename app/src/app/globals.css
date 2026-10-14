@@ -57,10 +57,10 @@ body {
   }
 }
 
-/* Headings: the system font, bold and a little tight. */
+/* Headings: the same font as the text, extra bold and a little tight. */
 .font-serif {
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 /* Numbers inside a heading stay in the mono font's own weight. */
 .font-serif .font-mono,
