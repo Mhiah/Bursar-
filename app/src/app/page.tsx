@@ -71,11 +71,8 @@ export default function Home() {
           <Wordmark height={40} />
         </Link>
         <nav aria-label="Main" className="hidden gap-7 text-sm text-ink lg:flex">
-          <a href="#how" className="hover:text-ink">How it works</a>
-          <a href="#rules" className="hover:text-ink">The rules</a>
-          <a href="#pay" className="hover:text-ink">Getting paid</a>
-          <a href="#log" className="hover:text-ink">The ledger</a>
-          <a href="#limits" className="hover:text-ink">Limits</a>
+          <a href="#how" className="font-semibold text-ink hover:text-brand">How it works</a>
+          <a href="#limits" className="font-semibold text-ink hover:text-brand">Limits</a>
         </nav>
         <div className="flex items-center gap-3">
           <span className="hidden items-center gap-2 whitespace-nowrap rounded-full border border-rule bg-card px-3 py-1 font-mono text-xs text-ink sm:inline-flex">
@@ -94,7 +91,7 @@ export default function Home() {
           <h1 className="mt-5 text-balance font-serif text-[44px] leading-[1.02] sm:text-6xl xl:text-[66px]">
             Keeps your books.
             <br />
-            <em className="marker">Never</em> breaks <span className="whitespace-nowrap">your rules.</span>
+            <em>Never</em> breaks <span className="whitespace-nowrap">your rules.</span>
           </h1>
           <p className="mt-6 max-w-xl text-pretty text-base text-ink sm:text-lg">
             Bursar collects what customers owe, pays your bills on time, keeps a reserve and checks every wallet before money moves. All in USDC,

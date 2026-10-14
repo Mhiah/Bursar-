@@ -68,14 +68,6 @@ body {
   font-weight: 500;
   letter-spacing: 0;
 }
-/* A highlighter stroke under a word in a headline. */
-.marker {
-  color: theme("colors.ink");
-  background: linear-gradient(transparent 58%, rgba(0, 102, 255, 0.35) 58%, rgba(0, 102, 255, 0.35) 92%, transparent 92%);
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  padding: 0 0.04em;
-}
 /* Numbers line up in columns. */
 .font-mono {
   font-variant-numeric: tabular-nums;
