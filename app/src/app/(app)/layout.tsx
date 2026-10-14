@@ -35,7 +35,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const agentMood = agentOn ? "duty" : "paused";
 
   if (error) return <div className="p-10 text-sm text-bad">{error}</div>;
-  if (!data?.business?.vault_address) return <div className="p-10 text-sm text-muted">Loading…</div>;
+  if (!data?.business?.vault_address) return <div className="p-10 text-sm text-ink">Loading…</div>;
 
   return (
     <BusinessContext.Provider value={{ business: data.business, vault: data.vault, reload }}>
@@ -45,15 +45,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <Mark size={28} mood={agentMood} />
             <span className="font-serif text-2xl text-ink">Bursar</span>
           </Link>
-          <p className="mb-7 truncate pl-0.5 text-xs text-muted">{data.business.name}</p>
+          <p className="mb-7 truncate pl-0.5 text-xs text-ink">{data.business.name}</p>
           <nav className="space-y-0.5">
             {nav.map(([href, label], i) => (
               <Link
                 key={href}
                 href={href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm no-underline ${path === href ? "bg-ink text-paper" : "text-body hover:bg-rule-soft hover:text-ink"}`}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm no-underline ${path === href ? "bg-ink text-paper" : "text-ink hover:bg-rule-soft hover:text-ink"}`}
               >
-                <span className={`font-mono text-[11px] ${path === href ? "text-clay-line" : "text-muted"}`}>{String(i + 1).padStart(2, "0")}</span>
+                <span className={`font-mono text-[11px] ${path === href ? "text-paper" : "text-ink"}`}>{String(i + 1).padStart(2, "0")}</span>
                 {label}
               </Link>
             ))}
@@ -64,13 +64,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <Mark size={34} mood={agentMood} />
                 <div>
                   <p className="text-sm font-medium">{agentOn ? "Agent on duty" : vault.paused ? "Agent paused" : "Agent off"}</p>
-                  <p className="text-xs text-muted">{agentOn ? "Working inside your rules" : "Turn it on in Rules & settings"}</p>
+                  <p className="text-xs text-ink">{agentOn ? "Working inside your rules" : "Turn it on in Rules & settings"}</p>
                 </div>
               </div>
             </div>
-            {network === "testnet" && <p className="rounded bg-clay-soft px-2 py-1 text-xs text-clay-dark">Arc testnet</p>}
+            {network === "testnet" && <p className="rounded bg-clay-soft px-2 py-1 text-xs text-ink">Arc testnet</p>}
             <button
-              className="text-xs text-muted hover:text-ink"
+              className="text-xs text-ink hover:text-ink"
               onClick={async () => {
                 await api("/api/auth/logout", { method: "POST" });
                 router.replace("/");
@@ -84,7 +84,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-1 overflow-x-auto border-b border-rule bg-cream px-4 py-2 md:hidden">
             <Mark size={22} mood={agentMood} className="mr-1 shrink-0" />
             {nav.map(([href, label]) => (
-              <Link key={href} href={href} className={`whitespace-nowrap rounded-md px-2.5 py-1 text-xs no-underline ${path === href ? "bg-ink text-paper" : "text-body"}`}>
+              <Link key={href} href={href} className={`whitespace-nowrap rounded-md px-2.5 py-1 text-xs no-underline ${path === href ? "bg-ink text-paper" : "text-ink"}`}>
                 {label}
               </Link>
             ))}

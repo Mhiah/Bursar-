@@ -80,7 +80,7 @@ export default function Invoices() {
                 <td>{r.customer_name}</td>
                 <td>
                   {r.invoice_no}
-                  {r.instalments && <p className="text-xs text-muted">{r.instalments.length} instalments left</p>}
+                  {r.instalments && <p className="text-xs text-ink">{r.instalments.length} instalments left</p>}
                 </td>
                 <td><Money value={r.amount} /></td>
                 <td><Money value={r.paid_amount} /></td>
@@ -90,7 +90,7 @@ export default function Invoices() {
                   {["open", "part_paid"].includes(r.status) && (
                     <>
                       <button
-                        className="text-xs text-brand"
+                        className="text-xs text-ink"
                         onClick={() => {
                           navigator.clipboard.writeText(link(r.id));
                           setCopied(r.id);
@@ -98,12 +98,12 @@ export default function Invoices() {
                       >
                         {copied === r.id ? "Copied" : "Copy pay link"}
                       </button>
-                      <button className="ml-3 text-xs text-brand" onClick={() => setQr(qr === r.id ? null : r.id)}>
+                      <button className="ml-3 text-xs text-ink" onClick={() => setQr(qr === r.id ? null : r.id)}>
                         {qr === r.id ? "Hide QR code" : "QR code"}
                       </button>
                       {qr === r.id && <PayQr url={link(r.id)} invoiceNo={r.invoice_no} />}
                       <button
-                        className="ml-3 text-xs text-muted"
+                        className="ml-3 text-xs text-ink"
                         onClick={() => act.run(async () => { await api(`/api/requests/${r.id}`, { method: "PATCH", json: { action: "cancel" } }); await reqs.reload(); })}
                       >
                         Cancel
@@ -115,13 +115,13 @@ export default function Invoices() {
             ))}
           </tbody>
         </table>
-        {!reqs.data?.requests.length && <p className="pt-3 text-sm text-muted">No invoices yet.</p>}
+        {!reqs.data?.requests.length && <p className="pt-3 text-sm text-ink">No invoices yet.</p>}
       </section>
 
       {!!reqs.data?.unmatched.length && (
         <section className="card space-y-3">
           <h2 className="h-section">Payments we couldn't match</h2>
-          <p className="text-sm text-muted">Money arrived but it isn't clear which invoice it's for. The agent will try; you can match it yourself.</p>
+          <p className="text-sm text-ink">Money arrived but it isn't clear which invoice it's for. The agent will try; you can match it yourself.</p>
           <table className="table">
             <tbody>
               {reqs.data.unmatched.map((p) => (
@@ -173,7 +173,7 @@ function PayQr({ url, invoiceNo }: { url: string; invoiceNo: string }) {
     <div className="mt-3 flex flex-col items-end gap-2">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt={`QR code to pay invoice ${invoiceNo}`} className="h-44 w-44 rounded-lg border border-rule bg-white p-2" />
-      <a className="text-xs text-brand" href={src} download={`pay-${invoiceNo}.png`}>
+      <a className="text-xs text-ink" href={src} download={`pay-${invoiceNo}.png`}>
         Download QR code
       </a>
     </div>

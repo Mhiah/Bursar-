@@ -14,7 +14,7 @@ body {
     @apply font-serif text-[26px] leading-tight;
   }
   .eyebrow {
-    @apply font-mono text-xs uppercase tracking-[0.12em] text-clay;
+    @apply font-mono text-xs uppercase tracking-[0.12em] text-ink;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-sm font-medium text-card transition hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-50;
@@ -35,13 +35,13 @@ body {
     @apply w-full rounded-[10px] border border-line bg-card px-3 py-2.5 text-sm text-ink outline-none placeholder:text-muted focus:border-brand focus:ring-2 focus:ring-brand/20;
   }
   .label {
-    @apply mb-1.5 block text-xs font-medium uppercase tracking-[0.08em] text-muted;
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-[0.08em] text-ink;
   }
   .table {
     @apply w-full text-left text-sm;
   }
   .table th {
-    @apply border-b border-rule pb-2.5 text-xs font-medium uppercase tracking-[0.06em] text-muted;
+    @apply border-b border-rule pb-2.5 text-xs font-medium uppercase tracking-[0.06em] text-ink;
   }
   .table td {
     @apply border-b border-rule-soft py-3 pr-3 align-top;

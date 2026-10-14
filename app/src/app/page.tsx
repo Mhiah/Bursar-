@@ -51,10 +51,10 @@ function Section({ id, n, title, lede, children, className = "" }: { id: string;
     <section id={id} className={`mx-auto max-w-6xl px-6 py-20 ${className}`}>
       <div className="mb-10 grid gap-4 md:grid-cols-[1fr_1fr] md:items-end">
         <h2 className="font-serif text-4xl leading-tight md:text-5xl">
-          <span className="mr-4 align-top font-mono text-sm text-clay">{n}</span>
+          <span className="mr-4 align-top font-mono text-sm text-ink">{n}</span>
           {title}
         </h2>
-        {lede && <p className="max-w-md text-body md:justify-self-end">{lede}</p>}
+        {lede && <p className="max-w-md text-ink md:justify-self-end">{lede}</p>}
       </div>
       {children}
     </section>
@@ -69,7 +69,7 @@ export default function Home() {
           <Mark size={30} />
           <span className="font-serif text-2xl text-ink">Bursar</span>
         </Link>
-        <nav aria-label="Main" className="hidden gap-7 text-sm text-body md:flex">
+        <nav aria-label="Main" className="hidden gap-7 text-sm text-ink md:flex">
           <a href="#how" className="hover:text-ink">How it works</a>
           <a href="#rules" className="hover:text-ink">The rules</a>
           <a href="#pay" className="hover:text-ink">Getting paid</a>
@@ -77,7 +77,7 @@ export default function Home() {
           <a href="#limits" className="hover:text-ink">Limits</a>
         </nav>
         <div className="flex items-center gap-3">
-          <span className="hidden items-center gap-2 rounded-full border border-rule bg-card px-3 py-1 font-mono text-xs text-body sm:inline-flex">
+          <span className="hidden items-center gap-2 rounded-full border border-rule bg-card px-3 py-1 font-mono text-xs text-ink sm:inline-flex">
             <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand-dot" />
             Live on Arc mainnet
           </span>
@@ -95,7 +95,7 @@ export default function Home() {
             <br />
             <em className="marker">Never</em> breaks your rules.
           </h1>
-          <p className="mt-6 max-w-xl text-lg text-body">
+          <p className="mt-6 max-w-xl text-lg text-ink">
             Bursar collects what customers owe, pays your bills on time, keeps a reserve and checks every wallet before money moves. All in USDC,
             on a vault only you own.
           </p>
@@ -107,7 +107,7 @@ export default function Home() {
               See how it decides
             </a>
           </div>
-          <p className="mt-5 text-sm text-muted">You keep your keys. Bursar never holds your money.</p>
+          <p className="mt-5 text-sm text-ink">You keep your keys. Bursar never holds your money.</p>
         </div>
 
         <div className="relative">
@@ -116,34 +116,34 @@ export default function Home() {
               <span className="flex items-center gap-2 font-serif text-xl">
                 <Mark size={24} mood="duty" /> Today&apos;s ledger
               </span>
-              <span className="font-mono text-xs uppercase tracking-wider text-muted">Your business</span>
+              <span className="font-mono text-xs uppercase tracking-wider text-ink">Your business</span>
             </div>
             {ledger.map(([t, what, amt, kind]) => (
               <div key={t + what} className="grid grid-cols-[3rem_1fr_auto] items-baseline gap-3 border-b border-rule-soft py-2.5 text-sm last:border-0">
-                <span className="font-mono text-xs text-muted">{t}</span>
+                <span className="font-mono text-xs text-ink">{t}</span>
                 <span>{what}</span>
                 <span
-                  className={`font-mono text-xs ${kind === "in" ? "text-brand" : kind === "ask" ? "rounded bg-clay-soft px-1.5 py-0.5 text-clay-dark" : kind === "out" ? "text-ink" : "text-body"}`}
+                  className={`font-mono text-xs ${kind === "in" ? "text-ink" : kind === "ask" ? "rounded bg-clay-soft px-1.5 py-0.5 text-ink" : kind === "out" ? "text-ink" : "text-ink"}`}
                 >
                   {amt}
                 </span>
               </div>
             ))}
             <div className="mt-3 flex items-center justify-between border-t border-dashed border-line pt-3">
-              <span className="font-mono text-xs text-muted">fingerprint 0x8ead…f592</span>
+              <span className="font-mono text-xs text-ink">fingerprint 0x8ead…f592</span>
             </div>
           </div>
-          <span className="absolute -bottom-4 right-6 rotate-[-4deg] rounded-md border-2 border-brand px-3 py-1 font-mono text-xs uppercase tracking-widest text-brand bg-paper">
+          <span className="absolute -bottom-4 right-6 rotate-[-4deg] rounded-md border-2 border-brand px-3 py-1 font-mono text-xs uppercase tracking-widest text-ink bg-paper">
             Recorded on Arc
           </span>
         </div>
       </section>
 
       <div className="border-y border-rule bg-cream">
-        <div className="mx-auto flex max-w-6xl gap-8 overflow-x-auto px-6 py-4 font-mono text-xs uppercase tracking-widest text-body">
+        <div className="mx-auto flex max-w-6xl gap-8 overflow-x-auto px-6 py-4 font-mono text-xs uppercase tracking-widest text-ink">
           {strip.map((s, i) => (
             <span key={s} className="whitespace-nowrap">
-              <span className="text-clay">{String(i + 1).padStart(2, "0")}</span> {s}
+              <span className="text-ink">{String(i + 1).padStart(2, "0")}</span> {s}
             </span>
           ))}
         </div>
@@ -153,9 +153,9 @@ export default function Home() {
         <div className="grid gap-5 md:grid-cols-3">
           {steps.map(([t, d], i) => (
             <div key={t} className={`rounded-2xl border p-7 ${i === 2 ? "border-brand bg-brand text-paper" : "border-rule bg-card"}`}>
-              <span className={`font-serif text-6xl leading-none ${i === 2 ? "text-brand-soft" : "text-clay"}`}>{i + 1}</span>
+              <span className={`font-serif text-6xl leading-none ${i === 2 ? "text-paper" : "text-ink"}`}>{i + 1}</span>
               <h3 className="mt-6 font-serif text-2xl">{t}</h3>
-              <p className={`mt-2 text-sm ${i === 2 ? "text-brand-soft" : "text-body"}`}>{d}</p>
+              <p className={`mt-2 text-sm ${i === 2 ? "text-paper" : "text-ink"}`}>{d}</p>
             </div>
           ))}
         </div>
@@ -166,7 +166,7 @@ export default function Home() {
         n="02"
         title={
           <>
-            Rules it <em className="text-clay">can&apos;t</em> break
+            Rules it <em className="text-ink">can&apos;t</em> break
           </>
         }
         lede="The limits live in your vault contract, not in the agent's instructions. A wrong or tricked agent still can't go past them."
@@ -180,7 +180,7 @@ export default function Home() {
           {rules.map(([r, v]) => (
             <div key={r} className="flex items-center justify-between border-b border-rule-soft px-6 py-4 last:border-0">
               <span>{r}</span>
-              <span className="font-mono text-sm text-brand">{v}</span>
+              <span className="font-mono text-sm text-ink">{v}</span>
             </div>
           ))}
         </div>
@@ -191,7 +191,7 @@ export default function Home() {
           {methods.map(([t, d]) => (
             <div key={t} className="rounded-2xl border border-rule bg-card p-7">
               <h3 className="font-serif text-2xl">{t}</h3>
-              <p className="mt-2 text-sm text-body">{d}</p>
+              <p className="mt-2 text-sm text-ink">{d}</p>
             </div>
           ))}
         </div>
@@ -201,10 +201,10 @@ export default function Home() {
         <div className="mx-auto grid max-w-6xl gap-10 px-6 py-20 md:grid-cols-[1fr_1.2fr]">
           <div>
             <h2 className="font-serif text-4xl leading-tight md:text-5xl">
-              <span className="mr-4 align-top font-mono text-sm text-clay-line">04</span>
+              <span className="mr-4 align-top font-mono text-sm text-paper">04</span>
               Every decision, written down
             </h2>
-            <p className="mt-5 max-w-md text-paper/70">
+            <p className="mt-5 max-w-md text-paper">
               Each entry carries its reason in plain words. Its fingerprint includes the one before, and the latest is written to your vault, so
               the record can&apos;t be quietly changed. Anyone you share it with can check it.
             </p>
@@ -212,10 +212,10 @@ export default function Home() {
           <div className="space-y-3">
             {entries.map(([k, why, fp]) => (
               <div key={k} className="grid gap-2 rounded-xl border border-white/10 bg-white/5 p-5 sm:grid-cols-[6rem_1fr]">
-                <span className="font-mono text-xs uppercase tracking-widest text-clay-line">{k}</span>
+                <span className="font-mono text-xs uppercase tracking-widest text-paper">{k}</span>
                 <div>
                   <p>{why}</p>
-                  <p className="mt-1 font-mono text-xs text-paper/50">{fp}</p>
+                  <p className="mt-1 font-mono text-xs text-paper">{fp}</p>
                 </div>
               </div>
             ))}
@@ -228,7 +228,7 @@ export default function Home() {
           {limits.map(([t, d]) => (
             <div key={t} className="border-t border-rule pt-4">
               <h3 className="font-serif text-xl">{t}</h3>
-              <p className="mt-1 text-sm text-body">{d}</p>
+              <p className="mt-1 text-sm text-ink">{d}</p>
             </div>
           ))}
         </div>
@@ -238,7 +238,7 @@ export default function Home() {
         <div className="flex flex-col items-center rounded-3xl border border-rule bg-cream px-6 py-16 text-center">
           <Mark size={56} mood="paid" />
           <h2 className="mt-5 font-serif text-5xl md:text-6xl">Hire a bursar.</h2>
-          <p className="mt-4 max-w-md text-body">Set up takes a wallet and a few rules. Start small; raise the limits when you trust it.</p>
+          <p className="mt-4 max-w-md text-ink">Set up takes a wallet and a few rules. Start small; raise the limits when you trust it.</p>
           <Link href="/start" className="btn mt-8 px-6 py-3 text-base">
             Set up your business →
           </Link>
@@ -246,10 +246,10 @@ export default function Home() {
       </section>
 
       <footer className="border-t border-rule">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-8 text-xs text-muted">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-8 text-xs text-ink">
           <span>Bursar never holds your keys. Lost keys can&apos;t be recovered.</span>
           <span className="flex gap-5 font-mono">
-            <a href="https://github.com/Mhiah/Bursar-" className="text-muted hover:text-ink">Code</a>
+            <a href="https://github.com/Mhiah/Bursar-" className="text-ink hover:text-ink">Code</a>
             <span>USDC · Arc · Circle</span>
           </span>
         </div>

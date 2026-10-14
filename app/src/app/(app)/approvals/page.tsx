@@ -40,12 +40,12 @@ export default function Approvals() {
   return (
     <div className="space-y-6">
       <h1 className="h-page">Approvals</h1>
-      <p className="max-w-2xl text-sm text-muted">
+      <p className="max-w-2xl text-sm text-ink">
         Payments the agent wasn't allowed to make or wasn't sure about. You approve or reject each one with your own wallet.
       </p>
       <ConnectOwner owner={business.owner_address} />
       {act.error && <Notice kind="bad">{act.error}</Notice>}
-      {!items.length && <p className="text-sm text-muted">Nothing waiting for you.</p>}
+      {!items.length && <p className="text-sm text-ink">Nothing waiting for you.</p>}
       {items.map((p) => {
         const bill = bills.data?.bills.find((b) => b.approval_id != null && Number(b.approval_id) === p.id);
         const why = log.data?.decisions.find((d) => d.kind === "approval" && d.data?.billId === bill?.id);
@@ -55,16 +55,16 @@ export default function Approvals() {
               <p className="text-lg font-semibold">
                 <Money value={fromUnits(p.amount)} /> to {bill?.supplier_name ?? <AddressLink address={p.to} />}
               </p>
-              <span className="text-xs text-muted">
+              <span className="text-xs text-ink">
                 {bill ? `Invoice ${bill.invoice_no} · due ${bill.due_date}` : ""} · {safeCategory(p.category)}
               </span>
             </div>
-            {why && <p className="text-sm text-body">{why.reasoning}</p>}
+            {why && <p className="text-sm text-ink">{why.reasoning}</p>}
             {bill?.flags?.length > 0 && <Notice kind="warn">{bill.flags.map((f: any) => f.detail).join(" ")}</Notice>}
             {why?.data?.screening?.reasons?.length > 0 && (
               <Notice kind="warn">Wallet check: {why.data.screening.reasons.map((r: any) => r.detail).join(" ")}</Notice>
             )}
-            <p className="text-xs text-muted">
+            <p className="text-xs text-ink">
               Pays <AddressLink address={p.to} />
             </p>
             <div className="flex gap-2">

@@ -46,11 +46,11 @@ export default function Customers() {
             {list.data?.customers.map((c) => (
               <tr key={c.id}>
                 <td>{c.name}</td>
-                <td className="text-xs text-muted">{c.email || "none"}</td>
+                <td className="text-xs text-ink">{c.email || "none"}</td>
                 <td><Money value={c.reliability.outstanding} /></td>
                 <td>
                   <span className="font-medium">{c.reliability.label}</span>
-                  <span className="ml-2 text-xs text-muted">
+                  <span className="ml-2 text-xs text-ink">
                     score {c.reliability.score} · {c.reliability.paidOnTime} on time, {c.reliability.paidLate} late
                     {c.reliability.overdueNow ? `, ${c.reliability.overdueNow} overdue now` : ""}
                   </span>
@@ -59,7 +59,7 @@ export default function Customers() {
             ))}
           </tbody>
         </table>
-        {!list.data?.customers.length && <p className="pt-3 text-sm text-muted">No customers yet.</p>}
+        {!list.data?.customers.length && <p className="pt-3 text-sm text-ink">No customers yet.</p>}
       </section>
     </div>
   );

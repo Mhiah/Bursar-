@@ -42,8 +42,8 @@ export default function Start() {
         {(["wallet", "details", "vault"] as Step[]).map((s, i) => {
           const on = s === step || (s === "wallet" && step === "signin");
           return (
-            <li key={s} className={on ? "text-ink" : "text-muted"}>
-              <span className={on ? "text-clay" : ""}>{String(i + 1).padStart(2, "0")}</span> {{ wallet: "Wallet", signin: "", details: "Business", vault: "Vault" }[s]}
+            <li key={s} className={on ? "text-ink" : "text-ink"}>
+              <span className={on ? "text-ink" : ""}>{String(i + 1).padStart(2, "0")}</span> {{ wallet: "Wallet", signin: "", details: "Business", vault: "Vault" }[s]}
             </li>
           );
         })}
@@ -81,7 +81,7 @@ function WalletStep() {
         <div className="grid grid-cols-3 gap-2 rounded-lg border border-rule bg-card p-4 font-mono text-sm">
           {phrase.split(" ").map((word, i) => (
             <span key={i}>
-              <span className="text-muted">{i + 1}.</span> {word}
+              <span className="text-ink">{i + 1}.</span> {word}
             </span>
           ))}
         </div>
@@ -97,7 +97,7 @@ function WalletStep() {
   return (
     <div className="space-y-5">
       <h1 className="h-page">Your business wallet</h1>
-      <p className="text-sm text-body">
+      <p className="text-sm text-ink">
         This wallet will own your business vault. Any EVM wallet works. You keep the keys; if they're lost, nobody can recover them.
       </p>
       {mode === "choose" && (
@@ -186,7 +186,7 @@ function SignInStep({ onDone }: { onDone: (business: any) => void }) {
   return (
     <div className="space-y-4">
       <h1 className="h-page">Sign in</h1>
-      <p className="text-sm text-body">
+      <p className="text-sm text-ink">
         Approve the sign-in request in your wallet for <span className="font-mono">{short(w.address)}</span>. It's a signature, not a transaction: it
         doesn't move money or cost anything.
       </p>
@@ -260,7 +260,7 @@ function VaultStep({ onDone }: { onDone: () => void }) {
     return (
       <div className="space-y-4">
         <h1 className="h-page">Your business vault</h1>
-        <p className="text-sm text-body">
+        <p className="text-sm text-ink">
           Your wallet already created a vault on Arc: <span className="font-mono">{existing[existing.length - 1]}</span>. Use it instead of making a new one.
         </p>
         <button className="btn" disabled={busy} onClick={() => useExisting(existing[existing.length - 1])}>
@@ -274,7 +274,7 @@ function VaultStep({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-4">
       <h1 className="h-page">Create your business vault</h1>
-      <p className="text-sm text-body">
+      <p className="text-sm text-ink">
         Your vault is a contract on Arc that your wallet owns. Payments land here. Bursar's agent gets a limited key that can only act inside these
         rules; you can change them, pause the agent, or remove it at any time.
       </p>

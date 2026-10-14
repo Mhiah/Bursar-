@@ -141,7 +141,7 @@ export default function Settings() {
       <section className="card space-y-4">
         <div>
           <h2 className="h-section">Vault rules</h2>
-          <p className="text-sm text-muted">Enforced by your vault contract. The agent can't change them.</p>
+          <p className="text-sm text-ink">Enforced by your vault contract. The agent can't change them.</p>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
           <Field label="Most per payment (USDC)"><input className="input" value={maxPer} onChange={(e) => setMaxPer(e.target.value)} /></Field>
@@ -149,14 +149,14 @@ export default function Settings() {
         </div>
         <div className="flex items-center gap-3">
           <button className="btn" onClick={saveRules}>Save</button>
-          {changes.pending("rules") && <span className="text-xs text-muted">Waiting for approval</span>}
+          {changes.pending("rules") && <span className="text-xs text-ink">Waiting for approval</span>}
         </div>
       </section>
 
       <section className="card space-y-4">
         <div>
           <h2 className="h-section">Monthly budgets</h2>
-          <p className="text-sm text-muted">How much the agent may pay per category every 30 days. A category with no budget can't be paid without you.</p>
+          <p className="text-sm text-ink">How much the agent may pay per category every 30 days. A category with no budget can't be paid without you.</p>
         </div>
         {budgets.length > 0 && (
           <table className="table">
@@ -170,7 +170,7 @@ export default function Settings() {
                   </td>
                   <td>
                     {b.left} USDC
-                    {changes.pending(`budget:${b.category}`) && <span className="ml-3 text-xs text-muted">Waiting for approval</span>}
+                    {changes.pending(`budget:${b.category}`) && <span className="ml-3 text-xs text-ink">Waiting for approval</span>}
                   </td>
                 </tr>
               ))}
@@ -189,7 +189,7 @@ export default function Settings() {
         ))}
         <div className="flex items-center gap-4">
           <button className="btn" onClick={saveBudgets}>Save</button>
-          <button className="text-xs text-brand" onClick={() => setNewCats([...newCats, { category: "", limit: "" }])}>
+          <button className="text-xs text-ink" onClick={() => setNewCats([...newCats, { category: "", limit: "" }])}>
             Add another category
           </button>
         </div>
@@ -198,7 +198,7 @@ export default function Settings() {
       <section className="card space-y-4">
         <div>
           <h2 className="h-section">The agent</h2>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-ink">
             Agent key: {vault.agent === zeroAddress ? "none" : <AddressLink address={vault.agent} />}
             {vault.agent !== zeroAddress && !agentIsBursar && " (not Bursar's)"}. {vault.paused ? "Paused." : ""}
           </p>
@@ -226,7 +226,7 @@ export default function Settings() {
       <section className="card space-y-4">
         <div>
           <h2 className="h-section">How the agent works</h2>
-          <p className="text-sm text-muted">Guidance the agent follows inside the vault's rules.</p>
+          <p className="text-sm text-ink">Guidance the agent follows inside the vault's rules.</p>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
           <Num label="Keep cash for the next (days of bills)" v={s.operatingDays} on={(v) => setS({ ...s, operatingDays: v })} />
@@ -268,7 +268,7 @@ export default function Settings() {
       <section className="card space-y-4">
         <div>
           <h2 className="h-section">Take money out</h2>
-          <p className="text-sm text-muted">You can always withdraw, reserve included. Balance: {vault.balance} USDC.</p>
+          <p className="text-sm text-ink">You can always withdraw, reserve included. Balance: {vault.balance} USDC.</p>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
           <Field label="To wallet"><input className="input font-mono" value={wd.to} onChange={(e) => setWd({ ...wd, to: e.target.value })} /></Field>

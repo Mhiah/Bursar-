@@ -105,11 +105,11 @@ export function ChangesBar({ className = "", extra = [], before, after, hasBefor
           {changes.length === 1 ? "1 change" : `${changes.length} changes`} waiting for your approval
         </p>
       )}
-      <ul className="space-y-1 text-sm text-body">
+      <ul className="space-y-1 text-sm text-ink">
         {changes.map((c) => (
           <li key={c.key} className="flex items-center justify-between gap-3">
             <span>{c.label}</span>
-            <button className="text-xs text-muted hover:text-ink" disabled={act.busy} onClick={() => remove(c.key)}>
+            <button className="text-xs text-ink hover:text-ink" disabled={act.busy} onClick={() => remove(c.key)}>
               Remove
             </button>
           </li>
@@ -144,7 +144,7 @@ export function ChangesBar({ className = "", extra = [], before, after, hasBefor
             Discard
           </button>
         )}
-        {act.busy && changes.length > 0 && <span className="text-sm text-muted">Confirm in your wallet, then wait for Arc…</span>}
+        {act.busy && changes.length > 0 && <span className="text-sm text-ink">Confirm in your wallet, then wait for Arc…</span>}
       </div>
     </div>
   );

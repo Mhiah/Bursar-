@@ -42,7 +42,7 @@ export default function Suppliers() {
   return (
     <div className="space-y-8">
       <h1 className="h-page">Suppliers</h1>
-      <p className="max-w-2xl text-sm text-muted">
+      <p className="max-w-2xl text-sm text-ink">
         The agent can only pay wallets you've approved on your vault. Approving is a transaction you sign; Bursar can't do it for you.
       </p>
       <section className="card space-y-4">
@@ -85,26 +85,26 @@ export default function Suppliers() {
                   ) : (
                     <>
                       <AddressLink address={s.wallet_address} />
-                      {s.wallet_changed_at && <p className="text-xs text-clay-dark">changed {new Date(s.wallet_changed_at).toLocaleDateString()}</p>}
+                      {s.wallet_changed_at && <p className="text-xs text-ink">changed {new Date(s.wallet_changed_at).toLocaleDateString()}</p>}
                     </>
                   )}
                 </td>
                 <td>{s.category}</td>
                 <td>
                   <Status value={approved[s.wallet_address] ? "yes" : "no"} />
-                  {changes.pending(`payee:${s.wallet_address.toLowerCase()}`) && <p className="text-xs text-muted">Waiting for approval</p>}
+                  {changes.pending(`payee:${s.wallet_address.toLowerCase()}`) && <p className="text-xs text-ink">Waiting for approval</p>}
                 </td>
                 <td className="whitespace-nowrap text-right text-xs">
-                  <button className="text-brand" disabled={act.busy} onClick={() => setPayee(s, !approved[s.wallet_address])}>
+                  <button className="text-ink" disabled={act.busy} onClick={() => setPayee(s, !approved[s.wallet_address])}>
                     {approved[s.wallet_address] ? "Remove approval" : "Approve on vault"}
                   </button>
-                  <button className="ml-3 text-muted" onClick={() => setEditing({ id: s.id, wallet: s.wallet_address })}>Change wallet</button>
+                  <button className="ml-3 text-ink" onClick={() => setEditing({ id: s.id, wallet: s.wallet_address })}>Change wallet</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {!list.data?.suppliers.length && <p className="pt-3 text-sm text-muted">No suppliers yet.</p>}
+        {!list.data?.suppliers.length && <p className="pt-3 text-sm text-ink">No suppliers yet.</p>}
       </section>
     </div>
   );

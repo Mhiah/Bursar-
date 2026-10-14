@@ -30,13 +30,13 @@ export default function Savings() {
   return (
     <div className="space-y-8">
       <h1 className="h-page">Savings</h1>
-      <p className="max-w-2xl text-sm text-muted">
+      <p className="max-w-2xl text-sm text-ink">
         Your business's savings, kept apart from the vault in an account only you own. The agent can put money into your savings pots but can never take it out.
       </p>
       {!SAVINGS_FACTORY ? (
         <Notice kind="warn">Savings isn't set up on this site yet.</Notice>
       ) : data.loading && !data.data ? (
-        <p className="text-sm text-muted">Loading…</p>
+        <p className="text-sm text-ink">Loading…</p>
       ) : !savings ? (
         <OpenSavings owner={business.owner_address} onDone={data.reload} />
       ) : (
@@ -66,7 +66,7 @@ function OpenSavings({ owner, onDone }: { owner: string; onDone: () => Promise<v
     <section className="card space-y-4">
       <div>
         <h2 className="h-section">Open your savings account</h2>
-        <p className="text-sm text-muted">One approval in your wallet. After that you can make savings pots: Flex, Locked and Target.</p>
+        <p className="text-sm text-ink">One approval in your wallet. After that you can make savings pots: Flex, Locked and Target.</p>
       </div>
       <ConnectOwner owner={owner} />
       {act.error && <Notice kind="bad">{act.error}</Notice>}
@@ -158,9 +158,9 @@ function SavingsAccount({
       {done && <Notice kind="ok">{done}</Notice>}
 
       <section className="card space-y-2">
-        <p className="text-sm text-muted">Total saved</p>
+        <p className="text-sm text-ink">Total saved</p>
         <p className="font-serif text-4xl">{fromUnits(total)} USDC</p>
-        <p className="text-xs text-muted">
+        <p className="text-xs text-ink">
           Savings account <AddressLink address={savings} />
           {unassigned > 0n && <> · {fromUnits(unassigned)} USDC arriving, not in a savings pot yet</>}
         </p>
@@ -170,7 +170,7 @@ function SavingsAccount({
 
       <section className="space-y-4">
         <h2 className="h-section">Your savings pots</h2>
-        {!pots.length && <p className="text-sm text-muted">No savings pots yet. Make your first one below.</p>}
+        {!pots.length && <p className="text-sm text-ink">No savings pots yet. Make your first one below.</p>}
         <div className="grid gap-4 md:grid-cols-2">
           {pots.map((p) => (
             <PotCard key={p.id} p={p} savings={savings} vault={vault} owner={owner} signerReady={signer.ready} client={signer.client} onDone={async (msg) => { setDone(msg); await refresh(); }} />
@@ -185,15 +185,15 @@ function SavingsAccount({
 
       <section className="card space-y-3">
         <h2 className="h-section">Recent savings</h2>
-        {!moves.length && <p className="text-sm text-muted">Nothing saved yet.</p>}
+        {!moves.length && <p className="text-sm text-ink">Nothing saved yet.</p>}
         <ul className="divide-y divide-rule text-sm">
           {moves.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
               <span>
                 {fromUnits(m.amount)} USDC to {pots[m.pot]?.name ?? `savings pot ${m.pot + 1}`} ·{" "}
-                <span className="text-muted">{{ paid: "Save when paid", owner: "You" }[m.source as string] ?? m.source}</span>
+                <span className="text-ink">{{ paid: "Save when paid", owner: "You" }[m.source as string] ?? m.source}</span>
               </span>
-              <span className={`text-xs ${m.status === "failed" ? "text-bad" : "text-muted"}`}>
+              <span className={`text-xs ${m.status === "failed" ? "text-bad" : "text-ink"}`}>
                 {m.status === "failed" ? "Didn't go through" : m.status === "pending" ? "Arriving" : new Date(m.created_at).toLocaleDateString()}
               </span>
             </li>
@@ -216,7 +216,7 @@ function SavingsBudget({ savings, setup, onSaved }: { savings: Address; setup: {
     <section className="card space-y-4">
       <div>
         <h2 className="h-section">Savings budget</h2>
-        <p className="text-sm text-muted">
+        <p className="text-sm text-ink">
           The most the agent may move from your vault into savings every 30 days, for Save when paid. Your vault enforces it.
           {setup && setup.approved && <> Left this period: {fromUnits(setup.left)} USDC.</>}
         </p>
@@ -241,7 +241,7 @@ function SavingsBudget({ savings, setup, onSaved }: { savings: Address; setup: {
         >
           Save
         </button>
-        {waiting && <span className="text-xs text-muted">Waiting for approval</span>}
+        {waiting && <span className="text-xs text-ink">Waiting for approval</span>}
       </div>
     </section>
   );
@@ -278,7 +278,7 @@ function PotCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-medium">{p.name}</p>
-          <p className="text-xs text-muted">
+          <p className="text-xs text-ink">
             {p.kind}
             {p.kind === "Locked" && ` · ${locked ? "locked until" : "unlocked since"} ${day(p.date)}`}
             {p.kind === "Target" && ` · goal ${fromUnits(p.goal)} USDC${p.date ? ` by ${day(p.date)}` : ""}`}
@@ -292,7 +292,7 @@ function PotCard({
         </div>
       )}
       {p.kind === "Target" && p.goal > 0n && (
-        <p className="text-xs text-muted">
+        <p className="text-xs text-ink">
           {p.balance >= p.goal
             ? "Goal reached."
             : `${fromUnits(p.goal - p.balance)} USDC to go${p.date ? (p.date * 1000 < Date.now() ? ". The date has passed." : ` by ${day(p.date)}`) : ""}.`}
@@ -305,7 +305,7 @@ function PotCard({
           <Field label="Keep it locked until">
             <input className="input max-w-[180px]" type="date" value={later} onChange={(e) => setLater(e.target.value)} />
           </Field>
-          <p className="text-xs text-muted">You can make a lock longer, never shorter.</p>
+          <p className="text-xs text-ink">You can make a lock longer, never shorter.</p>
           <div className="flex gap-2">
             <button
               className="btn"
@@ -370,12 +370,12 @@ function PotCard({
         </div>
       ) : (
         <div className="flex gap-3 text-xs">
-          <button className="text-brand" onClick={() => setMode("add")}>Add money</button>
+          <button className="text-ink" onClick={() => setMode("add")}>Add money</button>
           {!locked && p.balance > 0n && (
-            <button className="text-brand" onClick={() => setMode("out")}>Take out</button>
+            <button className="text-ink" onClick={() => setMode("out")}>Take out</button>
           )}
           {p.kind === "Locked" && (
-            <button className="text-brand" onClick={() => setMode("lock")}>Lock for longer</button>
+            <button className="text-ink" onClick={() => setMode("lock")}>Lock for longer</button>
           )}
         </div>
       )}
@@ -412,7 +412,7 @@ function NewPot({ savings, owner, onDone }: { savings: Address; owner: string; o
           </Field>
         )}
       </div>
-      <p className="text-xs text-muted">{KIND_NOTE[f.kind]}</p>
+      <p className="text-xs text-ink">{KIND_NOTE[f.kind]}</p>
       <ConnectOwner owner={owner} />
       {act.error && <Notice kind="bad">{act.error}</Notice>}
       <button
@@ -476,7 +476,7 @@ function SaveWhenPaid({
     <section className="card space-y-4">
       <div>
         <h2 className="h-section">Save when paid</h2>
-        <p className="text-sm text-muted">When a customer pays an invoice, the agent saves a share of it. {w ? `On: ${w.percent}% of every payment.` : "Off."}</p>
+        <p className="text-sm text-ink">When a customer pays an invoice, the agent saves a share of it. {w ? `On: ${w.percent}% of every payment.` : "Off."}</p>
       </div>
       {act.error && <Notice kind="bad">{act.error}</Notice>}
       <div className="grid gap-3 md:grid-cols-2">

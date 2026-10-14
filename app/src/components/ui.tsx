@@ -42,7 +42,7 @@ export function Field({ label, children, hint }: { label: string; children: Reac
     <label className="block">
       <span className="label">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-muted">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-ink">{hint}</span>}
     </label>
   );
 }
@@ -50,36 +50,36 @@ export function Field({ label, children, hint }: { label: string; children: Reac
 export function Notice({ kind = "info", children }: { kind?: "info" | "warn" | "bad" | "ok"; children: ReactNode }) {
   const tone = {
     info: "bg-cream border-rule",
-    warn: "bg-clay-soft border-clay-line text-clay-dark",
+    warn: "bg-clay-soft border-clay-line text-ink",
     bad: "bg-bad-soft border-bad/30 text-bad",
-    ok: "bg-brand-soft border-brand/20 text-brand",
+    ok: "bg-brand-soft border-brand/20 text-ink",
   }[kind];
   return <div className={`rounded-lg border px-4 py-3 text-sm ${tone}`}>{children}</div>;
 }
 
 export function Status({ value }: { value: string }) {
   const tone: Record<string, string> = {
-    paid: "bg-brand-soft text-brand",
-    clear: "bg-brand-soft text-brand",
+    paid: "bg-brand-soft text-ink",
+    clear: "bg-brand-soft text-ink",
     open: "bg-cream text-ink ring-1 ring-inset ring-rule",
     new: "bg-cream text-ink ring-1 ring-inset ring-rule",
     scheduled: "bg-cream text-ink ring-1 ring-inset ring-rule",
-    part_paid: "bg-clay-soft text-clay-dark",
-    held: "bg-clay-soft text-clay-dark",
-    review: "bg-clay-soft text-clay-dark",
-    awaiting_approval: "bg-clay-soft text-clay-dark",
+    part_paid: "bg-clay-soft text-ink",
+    held: "bg-clay-soft text-ink",
+    review: "bg-clay-soft text-ink",
+    awaiting_approval: "bg-clay-soft text-ink",
     blocked: "bg-bad-soft text-bad",
     rejected: "bg-bad-soft text-bad",
-    cancelled: "bg-rule-soft text-muted",
+    cancelled: "bg-rule-soft text-ink",
   };
-  return <span className={`pill ${tone[value] ?? "bg-rule-soft text-body"}`}>{value.replace(/_/g, " ")}</span>;
+  return <span className={`pill ${tone[value] ?? "bg-rule-soft text-ink"}`}>{value.replace(/_/g, " ")}</span>;
 }
 
 export const short = (a?: string | null) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");
 
 export function AddressLink({ address }: { address: string }) {
   return (
-    <a className="font-mono text-xs text-brand underline-offset-2 hover:underline" href={explorerAddress(address)} target="_blank" rel="noreferrer">
+    <a className="font-mono text-xs text-ink underline-offset-2 hover:underline" href={explorerAddress(address)} target="_blank" rel="noreferrer">
       {short(address)}
     </a>
   );
@@ -87,7 +87,7 @@ export function AddressLink({ address }: { address: string }) {
 
 export function TxLink({ hash, label }: { hash: string; label?: string }) {
   return (
-    <a className="font-mono text-xs text-brand underline-offset-2 hover:underline" href={explorerTx(hash)} target="_blank" rel="noreferrer">
+    <a className="font-mono text-xs text-ink underline-offset-2 hover:underline" href={explorerTx(hash)} target="_blank" rel="noreferrer">
       {label ?? short(hash)}
     </a>
   );

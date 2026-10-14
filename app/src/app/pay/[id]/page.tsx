@@ -115,14 +115,14 @@ export default function Pay({ params }: { params: { id: string } }) {
     });
 
   if (inv.error) return <Shell><Notice kind="bad">{inv.error}</Notice></Shell>;
-  if (!d) return <Shell><p className="text-sm text-muted">Loading…</p></Shell>;
+  if (!d) return <Shell><p className="text-sm text-ink">Loading…</p></Shell>;
 
   return (
     <Shell>
       <div className="rounded-2xl border border-rule bg-card px-7 pb-6 pt-7">
-        <p className="text-sm text-muted">{d.business} asks for payment</p>
+        <p className="text-sm text-ink">{d.business} asks for payment</p>
         <p className="mt-2 font-serif text-6xl leading-none">
-          {Number(d.status === "paid" ? d.amount : d.outstanding).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} <span className="text-2xl text-muted">USDC</span>
+          {Number(d.status === "paid" ? d.amount : d.outstanding).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} <span className="text-2xl text-ink">USDC</span>
         </p>
         <div className="mt-5 space-y-1.5 border-t border-dashed border-line pt-4 text-sm">
           <Row k="Invoice"><span className="font-mono">{d.invoiceNo}</span></Row>
@@ -164,7 +164,7 @@ export default function Pay({ params }: { params: { id: string } }) {
                 <button key={m} onClick={() => { setMethod(m); setQuote(null); }} className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-left ${method === m ? "border-[1.5px] border-brand bg-brand-soft" : "border border-rule bg-card hover:bg-cream"}`}>
                   <span>
                     <span className="block font-semibold">{t}</span>
-                    <span className="text-[13px] text-muted">{sub}</span>
+                    <span className="text-[13px] text-ink">{sub}</span>
                   </span>
                   <span aria-hidden className={`h-4 w-4 rounded-full ${method === m ? "border-[5px] border-brand" : "border-[1.5px] border-line"}`} />
                 </button>
@@ -198,7 +198,7 @@ export default function Pay({ params }: { params: { id: string } }) {
           ) : (
             <div className="space-y-3">
               {balances && method !== "bridge" && (
-                <p className="text-xs text-muted">
+                <p className="text-xs text-ink">
                   Your wallet has {fromUnits(balances.usdc)} USDC and {fromUnits(balances.eurc)} EURC on Arc.
                 </p>
               )}
@@ -214,7 +214,7 @@ export default function Pay({ params }: { params: { id: string } }) {
           {act.error && <Notice kind="bad">{act.error}</Notice>}
         </div>
       )}
-      <p className="text-center text-[13px] text-muted">
+      <p className="text-center text-[13px] text-ink">
         Goes straight to {d.business}&apos;s vault on Arc{network === "testnet" ? " testnet" : ""}. Bursar never holds it.
       </p>
     </Shell>
@@ -224,7 +224,7 @@ export default function Pay({ params }: { params: { id: string } }) {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-lg space-y-4 px-5 py-10">
-      <p className="font-serif text-2xl text-muted">Bursar</p>
+      <p className="font-serif text-2xl text-ink">Bursar</p>
       {children}
     </div>
   );
@@ -233,7 +233,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 function Row({ k, children }: { k: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-muted">{k}</span>
+      <span className="text-ink">{k}</span>
       <span className="text-right">{children}</span>
     </div>
   );

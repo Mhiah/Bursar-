@@ -56,9 +56,9 @@ export default function Dashboard() {
         <div>
           <span className="eyebrow">{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</span>
           <h1 className="h-page mt-3">
-            {greeting}, <em className="text-brand">{business.name}</em>.
+            {greeting}, <em className="text-ink">{business.name}</em>.
           </h1>
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-2 text-sm text-ink">
             Vault <AddressLink address={vault.address} />
           </p>
         </div>
@@ -75,7 +75,7 @@ export default function Dashboard() {
         >
           {agent.busy ? "Agent is working…" : "Run the agent now"}
         </button>
-        {agentOn && every > 0 && <p className="text-xs text-muted">Runs by itself every {every >= 60 ? `${every / 60} hour${every === 60 ? "" : "s"}` : `${every} minute${every === 1 ? "" : "s"}`}.</p>}
+        {agentOn && every > 0 && <p className="text-xs text-ink">Runs by itself every {every >= 60 ? `${every / 60} hour${every === 60 ? "" : "s"}` : `${every} minute${every === 1 ? "" : "s"}`}.</p>}
         </div>
       </div>
       {agent.error && <Notice kind="bad">{agent.error}</Notice>}
@@ -97,7 +97,7 @@ export default function Dashboard() {
       {stats.data && (
         <section className="card">
           <h2 className="h-section">The agent&apos;s record</h2>
-          <p className="mb-4 text-sm text-muted">Counted from what actually happened in your vault.</p>
+          <p className="mb-4 text-sm text-ink">Counted from what actually happened in your vault.</p>
           <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
             <Fact label="Received from customers" value={<Money value={stats.data.received} />} />
             <Fact label="Paid to suppliers" value={<Money value={stats.data.paidOut} />} />
@@ -120,7 +120,7 @@ export default function Dashboard() {
             <Mark size={36} mood="asking" />
             <div>
               <p className="eyebrow">Needs you</p>
-              <p className="mt-1 text-clay-dark">
+              <p className="mt-1 text-ink">
                 {waiting.length} payment{waiting.length > 1 ? "s are" : " is"} waiting for your signature.
               </p>
             </div>
@@ -135,12 +135,12 @@ export default function Dashboard() {
         <section className="card">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="h-section">The ledger</h2>
-            <Link className="text-sm text-brand" href="/log">
+            <Link className="text-sm text-ink" href="/log">
               Full log →
             </Link>
           </div>
           {!log.data?.decisions.length ? (
-            <p className="py-4 text-sm text-muted">Nothing yet. Add invoices and bills, then run the agent.</p>
+            <p className="py-4 text-sm text-ink">Nothing yet. Add invoices and bills, then run the agent.</p>
           ) : (
             <ul>
               {log.data.decisions.map((d) => (
@@ -149,9 +149,9 @@ export default function Dashboard() {
                   <div className="min-w-0">
                     <div className="flex items-baseline justify-between gap-3">
                       <p className="text-sm font-medium">{d.summary}</p>
-                      <span className="shrink-0 font-mono text-[11px] text-muted">{new Date(d.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      <span className="shrink-0 font-mono text-[11px] text-ink">{new Date(d.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
-                    <p className="mt-0.5 text-sm text-muted">{d.reasoning}</p>
+                    <p className="mt-0.5 text-sm text-ink">{d.reasoning}</p>
                     {d.data?.tx && <TxLink hash={d.data.tx} label="View transaction" />}
                   </div>
                 </li>
@@ -163,12 +163,12 @@ export default function Dashboard() {
         <section className="card">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="h-section">Who owes you</h2>
-            <Link className="text-sm text-brand" href="/invoices">
+            <Link className="text-sm text-ink" href="/invoices">
               Invoices →
             </Link>
           </div>
           {!owed.length ? (
-            <p className="py-4 text-sm text-muted">Nobody. Every invoice is paid.</p>
+            <p className="py-4 text-sm text-ink">Nobody. Every invoice is paid.</p>
           ) : (
             <ul>
               {[...owed]
@@ -178,7 +178,7 @@ export default function Dashboard() {
                   <li key={r.id} className="flex items-center justify-between gap-3 border-b border-rule-soft py-3 last:border-0">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{r.customer_name}</p>
-                      <p className="font-mono text-[11px] text-muted">
+                      <p className="font-mono text-[11px] text-ink">
                         {r.invoice_no} · due {r.due_date}
                       </p>
                     </div>
@@ -197,23 +197,23 @@ export default function Dashboard() {
 }
 
 const kinds: Record<string, [string, string]> = {
-  pay: ["Paid", "text-brand"],
-  early_pay: ["Paid early", "text-brand"],
-  hold: ["Held", "text-body"],
-  reserve: ["Reserve", "text-body"],
-  release: ["Released", "text-body"],
-  approval: ["Asked you", "text-clay"],
-  chase: ["Chased", "text-clay"],
-  instalment: ["Instalments", "text-clay"],
-  screen: ["Checked", "text-muted"],
+  pay: ["Paid", "text-ink"],
+  early_pay: ["Paid early", "text-ink"],
+  hold: ["Held", "text-ink"],
+  reserve: ["Reserve", "text-ink"],
+  release: ["Released", "text-ink"],
+  approval: ["Asked you", "text-ink"],
+  chase: ["Chased", "text-ink"],
+  instalment: ["Instalments", "text-ink"],
+  screen: ["Checked", "text-ink"],
   block: ["Blocked", "text-bad"],
-  match: ["Matched", "text-brand"],
-  save: ["Saved", "text-brand"],
-  note: ["Note", "text-muted"],
+  match: ["Matched", "text-ink"],
+  save: ["Saved", "text-ink"],
+  note: ["Note", "text-ink"],
   attention: ["Needs you", "text-bad"],
 };
 const kindLabel = (k: string) => kinds[k]?.[0] ?? k;
-const kindTone = (k: string) => kinds[k]?.[1] ?? "text-muted";
+const kindTone = (k: string) => kinds[k]?.[1] ?? "text-ink";
 
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -229,7 +229,7 @@ function Stat({ label, value, sub, big, href }: { label: string; value: React.Re
     <>
       <p className="label">{label}</p>
       <p className={`whitespace-nowrap ${big ? "font-serif text-[28px] leading-tight" : "text-lg"}`}>{value}</p>
-      <p className="mt-1 text-xs text-muted">{sub}</p>
+      <p className="mt-1 text-xs text-ink">{sub}</p>
     </>
   );
   const cls = `block border-b border-rule-soft p-5 sm:border-r ${big ? "bg-cream" : ""}`;
