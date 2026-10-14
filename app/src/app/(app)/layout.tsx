@@ -42,7 +42,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen">
         <aside className="sticky top-0 hidden h-screen self-start w-64 shrink-0 flex-col border-r border-rule bg-cream px-5 py-6 md:flex">
           <Link href="/dashboard" className="mb-1 flex items-center gap-2.5 no-underline">
-            <Mark size={28} mood={agentMood} />
+            <Mark size={38} mood={agentMood} />
             <span className="font-serif text-2xl text-ink">Bursar</span>
           </Link>
           <p className="mb-7 truncate pl-0.5 text-xs text-ink">{data.business.name}</p>

@@ -1,47 +1,23 @@
-// Bursar's mark: a small ledger book whose face shows what the agent is doing.
+import { useId } from "react";
+
+// Bursar's mark: a cursive B in navy, its two left curls in blue.
 export type MarkMood = "duty" | "thinking" | "paid" | "asking" | "paused";
 
-const tone: Record<MarkMood, string> = {
-  duty: "#0066FF",
-  thinking: "#0066FF",
-  paid: "#0066FF",
-  asking: "#0052CC",
-  paused: "#5A6378",
-};
+// The B from Great Vibes, as a path in font units (so it needs no font to load).
+const B = "M178 -39Q156 -39 127.5 -34.5Q99 -30 72.5 -19.0Q46 -8 28.5 12.5Q11 33 11 64Q11 101 44.0 131.5Q77 162 137 162Q181 162 219.0 147.5Q257 133 293.5 112.5Q330 92 369 72Q419 120 460.5 191.0Q502 262 543.5 343.5Q585 425 633.5 507.0Q682 589 746 661L804 726Q767 732 727.0 735.5Q687 739 644 739Q585 739 515.5 729.0Q446 719 377.5 698.0Q309 677 252.5 645.0Q196 613 162.0 569.0Q128 525 128 468Q128 429 145.5 406.0Q163 383 189.5 372.5Q216 362 243 362Q288 362 319.0 382.5Q350 403 365.5 430.0Q381 457 381 478Q381 485 391 485Q401 485 401 469Q401 428 376.0 398.0Q351 368 313.5 352.0Q276 336 238 336Q203 336 166.5 353.0Q130 370 106.0 404.0Q82 438 82 488Q82 548 116.0 594.5Q150 641 207.0 674.0Q264 707 334.0 728.5Q404 750 475.5 760.0Q547 770 610 770Q668 770 723.5 764.5Q779 759 828 748Q842 760 856.5 769.0Q871 778 883 783Q894 788 901 788Q909 788 909 782Q909 779 898 771Q885 761 875.5 752.5Q866 744 864 740Q966 714 1029.5 668.5Q1093 623 1093 561Q1093 510 1058.0 471.5Q1023 433 966.5 411.0Q910 389 846 386Q936 357 989.5 311.0Q1043 265 1043 194Q1043 141 1012.5 98.0Q982 55 931.5 24.5Q881 -6 821.0 -22.5Q761 -39 702 -39Q609 -39 537.5 -20.0Q466 -1 389 34Q292 -39 178 -39ZM688 -10Q750 -10 801.0 9.0Q852 28 889.5 59.0Q927 90 947.5 128.0Q968 166 968 203Q968 238 947.0 270.5Q926 303 881 325Q823 354 779.0 365.5Q735 377 709 387Q699 392 696.0 394.0Q693 396 693 398Q693 408 703.0 414.0Q713 420 726 420Q746 420 769.0 417.0Q792 414 818 414Q883 414 930.0 440.0Q977 466 1002.5 505.0Q1028 544 1028 582Q1028 625 990.0 657.5Q952 690 852 716Q802 647 752.0 561.5Q702 476 652.0 388.5Q602 301 551.0 223.0Q500 145 449 89Q437 76 430.0 69.5Q423 63 411 52Q471 27 543.0 8.5Q615 -10 688 -10ZM158 -8Q214 -11 260.5 5.5Q307 22 347 52Q323 64 286.0 83.0Q249 102 211.0 116.5Q173 131 145 131Q108 131 89.0 111.5Q70 92 70 67Q70 41 92.0 17.5Q114 -6 158 -8Z";
 
-export function Mark({ mood = "duty", size = 40, className = "" }: { mood?: MarkMood; size?: number; className?: string }) {
-  const c = tone[mood];
+export function Mark({ size = 40, className = "" }: { mood?: MarkMood; size?: number; className?: string }) {
+  const clip = `b${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  const glyph = (fill: string, clipPath?: string) => <path d={B} fill={fill} transform="translate(8 934.5) scale(1 -1)" clipPath={clipPath} />;
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" className={className} role="img" aria-label={`Bursar, ${mood}`}>
-      {/* book cover and pages */}
-      <rect x="7" y="6" width="32" height="38" rx="5" fill={c} />
-      <rect x="11" y="9" width="30" height="34" rx="4" fill="#FFFFFF" stroke={c} strokeWidth="2" />
-      <line x1="16" y1="9" x2="16" y2="43" stroke={c} strokeWidth="1.5" opacity="0.35" />
-      {/* eyes */}
-      {mood === "paused" ? (
-        <>
-          <line x1="21" y1="22" x2="25" y2="22" stroke="#0A1128" strokeWidth="2" strokeLinecap="round" />
-          <line x1="30" y1="22" x2="34" y2="22" stroke="#0A1128" strokeWidth="2" strokeLinecap="round" />
-        </>
-      ) : mood === "thinking" ? (
-        <>
-          <circle cx="24" cy="20" r="1.8" fill="#0A1128" />
-          <circle cx="32" cy="20" r="1.8" fill="#0A1128" />
-        </>
-      ) : (
-        <>
-          <circle cx="23" cy="22" r="1.8" fill="#0A1128" />
-          <circle cx="32" cy="22" r="1.8" fill="#0A1128" />
-        </>
-      )}
-      {/* mouth */}
-      {mood === "paid" && <path d="M22 29 q5.5 5 11 0" fill="none" stroke="#0A1128" strokeWidth="2" strokeLinecap="round" />}
-      {mood === "duty" && <path d="M23 30 q4.5 2.5 9 0" fill="none" stroke="#0A1128" strokeWidth="2" strokeLinecap="round" />}
-      {mood === "thinking" && <line x1="24" y1="30" x2="31" y2="29" stroke="#0A1128" strokeWidth="2" strokeLinecap="round" />}
-      {mood === "asking" && <circle cx="27.5" cy="30" r="2.2" fill="none" stroke="#0A1128" strokeWidth="2" />}
-      {mood === "paused" && <line x1="24" y1="30" x2="31" y2="30" stroke="#0A1128" strokeWidth="2" strokeLinecap="round" />}
-      {/* bookmark ribbon */}
-      <path d="M34 9 v9 l2.5 -2 l2.5 2 v-9" fill={mood === "asking" ? "#0052CC" : "#0066FF"} />
+    <svg width={size} height={size} viewBox="0 0 1120 1120" className={className} role="img" aria-label="Bursar">
+      <defs>
+        <clipPath id={clip}>
+          <rect x="0" y="0" width="294" height="1120" />
+        </clipPath>
+      </defs>
+      {glyph("#0A1128")}
+      {glyph("#0066FF", `url(#${clip})`)}
     </svg>
   );
 }

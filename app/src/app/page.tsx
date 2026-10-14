@@ -66,7 +66,7 @@ export default function Home() {
     <div className="min-h-screen bg-paper text-ink">
       <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
         <Link href="/" className="flex items-center gap-2.5 no-underline">
-          <Mark size={30} />
+          <Mark size={40} />
           <span className="font-serif text-2xl text-ink">Bursar</span>
         </Link>
         <nav aria-label="Main" className="hidden gap-7 text-sm text-ink md:flex">
