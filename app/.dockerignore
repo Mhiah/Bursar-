@@ -1,0 +1,8 @@
+node_modules
+.next
+.next-mock
+.data
+.env
+.env.local
+*.tsbuildinfo
+test
