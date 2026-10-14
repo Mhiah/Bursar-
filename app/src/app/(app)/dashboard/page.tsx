@@ -86,11 +86,11 @@ export default function Dashboard() {
       )}
 
       <div className="grid overflow-hidden rounded-2xl border border-rule bg-card sm:grid-cols-2 lg:grid-cols-3 lg:[&>*:nth-last-child(-n+3)]:border-b-0">
-        <Stat label="In your vault" value={<Money value={total} />} sub="Operating cash plus reserve" big />
-        <Stat label="Operating cash" value={<Money value={vault.operating} />} sub={`Keeps at least ${vault.cashFloor}`} />
-        <Stat label="Reserve" value={<Money value={vault.reserve} />} sub="Set aside, not spent on bills" />
-        <Stat label="Owed to you" value={<Money value={owedTotal} />} sub={`${owed.length} invoices, ${overdue.length} late`} />
-        <Stat label="Bills to pay" value={<Money value={dueTotal} />} sub={`${due.length} waiting`} />
+        <Stat label="In your vault" value={<Money value={total} />} big />
+        <Stat label="Operating cash" value={<Money value={vault.operating} />} />
+        <Stat label="Reserve" value={<Money value={vault.reserve} />} />
+        <Stat label="Owed to you" value={<Money value={owedTotal} />} />
+        <Stat label="Bills to pay" value={<Money value={dueTotal} />} />
         <Stat label="Saved" value={<Money value={saved.data?.total ?? 0} />} sub={saved.data?.savings ? "In your savings pots →" : "Open savings →"} href="/savings" />
       </div>
 
@@ -98,7 +98,7 @@ export default function Dashboard() {
         <section className="card">
           <h2 className="h-section">The agent&apos;s record</h2>
           <p className="mb-4 text-sm text-ink">Counted from what actually happened in your vault.</p>
-          <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="divide-y divide-rule-soft">
             <Fact label="Received from customers" value={<Money value={stats.data.received} />} />
             <Fact label="Paid to suppliers" value={<Money value={stats.data.paidOut} />} />
             <Fact label="Bills paid on time with no human" value={`${stats.data.billsOnTimeByAgent} of ${stats.data.billsPaid}`} />
@@ -217,19 +217,19 @@ const kindTone = (k: string) => kinds[k]?.[1] ?? "text-ink";
 
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div>
-      <p className="label">{label}</p>
-      <p className="text-lg">{value}</p>
+    <div className="flex items-baseline justify-between gap-4 py-3">
+      <p className="text-ink">{label}</p>
+      <p className="whitespace-nowrap text-lg">{value}</p>
     </div>
   );
 }
 
-function Stat({ label, value, sub, big, href }: { label: string; value: React.ReactNode; sub: string; big?: boolean; href?: string }) {
+function Stat({ label, value, sub, big, href }: { label: string; value: React.ReactNode; sub?: string; big?: boolean; href?: string }) {
   const inner = (
     <>
       <p className="label">{label}</p>
       <p className={`whitespace-nowrap ${big ? "font-serif text-[28px] leading-tight" : "text-lg"}`}>{value}</p>
-      <p className="mt-1 text-xs text-ink">{sub}</p>
+      {sub && <p className="mt-1 text-xs text-ink">{sub}</p>}
     </>
   );
   const cls = `block border-b border-rule-soft p-5 sm:border-r ${big ? "bg-cream" : ""}`;
