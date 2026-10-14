@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mark } from "@/components/mark";
+import { Mark, Wordmark } from "@/components/mark";
 
 const ledger = [
   ["09:12", "Matched a payment to invoice INV-1042", "+1,200.00", "in"],
@@ -65,9 +65,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-paper text-ink">
       <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
-        <Link href="/" className="flex items-center gap-2.5 no-underline">
-          <Mark size={40} />
-          <span className="font-serif text-2xl text-ink">Bursar</span>
+        <Link href="/" className="flex items-center no-underline">
+          <Wordmark height={44} />
         </Link>
         <nav aria-label="Main" className="hidden gap-7 text-sm text-ink md:flex">
           <a href="#how" className="hover:text-ink">How it works</a>

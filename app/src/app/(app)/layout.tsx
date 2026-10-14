@@ -6,7 +6,7 @@ import { useEffect, type ReactNode } from "react";
 import { BusinessContext } from "@/components/business";
 import { ChangesProvider } from "@/components/changes";
 import { AGENT_ADDRESS, network } from "@/lib/arc";
-import { Mark } from "@/components/mark";
+import { Mark, Wordmark } from "@/components/mark";
 import { api, useApi } from "@/components/ui";
 
 const nav = [
@@ -41,9 +41,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <BusinessContext.Provider value={{ business: data.business, vault: data.vault, reload }}>
       <div className="flex min-h-screen">
         <aside className="sticky top-0 hidden h-screen self-start w-64 shrink-0 flex-col border-r border-rule bg-cream px-5 py-6 md:flex">
-          <Link href="/dashboard" className="mb-1 flex items-center gap-2.5 no-underline">
-            <Mark size={38} mood={agentMood} />
-            <span className="font-serif text-2xl text-ink">Bursar</span>
+          <Link href="/dashboard" className="mb-1 flex items-center no-underline">
+            <Wordmark height={42} />
           </Link>
           <p className="mb-7 truncate pl-0.5 text-xs text-ink">{data.business.name}</p>
           <nav className="space-y-0.5">
