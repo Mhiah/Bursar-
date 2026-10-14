@@ -21,6 +21,9 @@ const READS = new Set([
   "eth_getTransactionCount",
 ]);
 
+// Test mode's built-in wallet signs in the browser and sends through here (local test chain only).
+if (chain.id === 31337) READS.add("eth_sendRawTransaction");
+
 const upstream = () => process.env.ARC_RPC_URL || chain.rpcUrls.default.http[0];
 
 const MAX_BATCH = 20;

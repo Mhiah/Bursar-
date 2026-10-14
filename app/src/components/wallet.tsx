@@ -83,7 +83,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   // Test mode: the test owner wallet is always connected, so there's nothing to install or sign for real.
   useEffect(() => {
     if (!MOCK) return;
-    setClient(createWalletClient({ account: privateKeyToAccount(MOCK_OWNER_KEY), chain, transport: http() }));
+    // Through this site, so test mode also works from a phone on the same Wi-Fi.
+    setClient(createWalletClient({ account: privateKeyToAccount(MOCK_OWNER_KEY), chain, transport: http(`${window.location.origin}/api/rpc`) }));
     setKind("local");
   }, []);
 
