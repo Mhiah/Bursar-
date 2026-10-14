@@ -1,5 +1,5 @@
-import { IBM_Plex_Mono, Nanum_Gothic } from "next/font/google";
+import { Inter } from "next/font/google";
 
-// Headings and text: the device's system font, with Nanum Gothic loaded for devices that have none of them (most Windows PCs).
-export const nanum = Nanum_Gothic({ subsets: ["latin"], weight: ["400", "700", "800"], variable: "--font-nanum" });
-export const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
+// Every font is SF Pro. Apple devices have it built in; a PC uses SF Pro if it's installed,
+// otherwise Inter, the closest free match (SF Pro's licence doesn't allow serving it from a website).
+export const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-inter" });

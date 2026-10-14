@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { WalletProvider } from "@/components/wallet";
 import { MockBanner } from "@/components/mock-banner";
-import { mono, nanum } from "./fonts";
+import { inter } from "./fonts";
 
 export const metadata: Metadata = {
   title: "Bursar",
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${nanum.variable} ${mono.variable}`}>
+    <html lang="en" className={inter.variable}>
       <body>
         <WalletProvider>
           <MockBanner />

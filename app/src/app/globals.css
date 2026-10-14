@@ -76,3 +76,7 @@ body {
   box-decoration-break: clone;
   padding: 0 0.04em;
 }
+/* Numbers line up in columns. */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
