@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { x402Client, x402HTTPClient } from "@x402/core/client";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { parseUnits, type Hex } from "viem";
+import { one, q } from "@/lib/db";
 import { agentAddress, circle, circleChain } from "./wallet";
 
 // Where the agent's thinking comes from:
@@ -13,6 +14,12 @@ export const useBlockRun = () => (process.env.AI_PROVIDER || "").toLowerCase() =
 const BLOCKRUN_URL = () => process.env.BLOCKRUN_URL || "https://arc.blockrun.ai/api";
 /** The most one AI call may cost, in USDC. */
 const maxPerCall = () => parseUnits(process.env.AI_MAX_USDC_PER_CALL || "0.10", 6);
+/** The most the agent wallet may spend on AI in one day, across every business, in USDC. */
+const maxPerDay = () => parseUnits(process.env.AI_MAX_USDC_PER_DAY || "2", 6);
+
+const spentToday = async () => BigInt((await one<{ amount: string }>("SELECT amount FROM ai_spend WHERE day = CURRENT_DATE"))?.amount ?? 0);
+const addSpend = (amount: bigint) =>
+  q("INSERT INTO ai_spend (day, amount) VALUES (CURRENT_DATE, $1) ON CONFLICT (day) DO UPDATE SET amount = ai_spend.amount + $1", [amount.toString()]);
 
 /** Signs x402 payments with the Circle agent wallet. */
 const circleSigner = () => ({
@@ -42,8 +49,10 @@ const circleSigner = () => ({
 
 /** fetch that answers a 402 by paying from the Circle agent wallet, once, within the per-call cap. */
 function payingFetch(): typeof fetch {
+  let price = 0n;
   const client = new x402Client((_v, reqs) => {
     const arc = reqs.find((r) => r.network === "eip155:5042") ?? reqs[0];
+    price = BigInt(arc.amount);
     if (BigInt(arc.amount) > maxPerCall()) {
       throw new Error(`AI call would cost ${Number(arc.amount) / 1e6} USDC, above AI_MAX_USDC_PER_CALL`);
     }
@@ -60,6 +69,7 @@ function payingFetch(): typeof fetch {
       body = await res.clone().json();
     } catch {}
     const headers = new Headers(init?.headers);
+    if ((await spentToday()) + maxPerCall() > maxPerDay()) return paymentError("The agent has reached today's AI spending limit (AI_MAX_USDC_PER_DAY).");
     try {
       const required = http.getPaymentRequiredResponse((h) => res.headers.get(h), body);
       const payload = await http.createPaymentPayload(required);
@@ -68,6 +78,7 @@ function payingFetch(): typeof fetch {
       return paymentError(e?.message || String(e));
     }
     const paid = await fetch(input, { ...init, headers });
+    if (paid.status !== 402) await addSpend(price);
     if (paid.status === 402) return paymentError("AI payment was refused. Check the agent wallet has USDC on Arc.");
     return paid;
   };

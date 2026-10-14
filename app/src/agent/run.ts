@@ -58,9 +58,23 @@ const running = new Map<string, ReturnType<typeof runBusinessNow>>();
 export async function runBusiness(businessId: string, decide: Decider = claudeDecider) {
   const busy = running.get(businessId);
   if (busy) return busy;
-  const p = runBusinessNow(businessId, decide).finally(() => running.delete(businessId));
+  const p = leased(businessId, () => runBusinessNow(businessId, decide)).finally(() => running.delete(businessId));
   running.set(businessId, p);
   return p;
+}
+
+/** Also hold a lease in the database, so runs from other processes (worker, second server) never overlap. */
+async function leased<T extends { skipped?: string }>(businessId: string, fn: () => Promise<T>): Promise<T> {
+  const got = await one(
+    "UPDATE businesses SET agent_lease_until = now() + interval '10 minutes' WHERE id = $1 AND (agent_lease_until IS NULL OR agent_lease_until < now()) RETURNING id",
+    [businessId],
+  );
+  if (!got) return { skipped: "the agent is already running for this business" } as T;
+  try {
+    return await fn();
+  } finally {
+    await q("UPDATE businesses SET agent_lease_until = NULL WHERE id = $1", [businessId]);
+  }
 }
 
 async function runBusinessNow(businessId: string, decide: Decider) {

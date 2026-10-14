@@ -2,7 +2,7 @@ import { getAddress, keccak256, toHex, type Address, type Hex } from "viem";
 import { bursarSavingsAbi } from "@/lib/abi/BursarSavings";
 import { categoryKey } from "@/lib/category";
 import { publicClient } from "@/lib/chain";
-import { newId, q } from "@/lib/db";
+import { newId, one, q } from "@/lib/db";
 import { logDecision } from "@/lib/decisions";
 import { fromUnits } from "@/lib/money";
 import type { Business, SavingsPlans } from "@/lib/session";
@@ -50,8 +50,13 @@ export async function runSavings(b: Business, vault: Address) {
   );
   for (const m of pending) {
     if ((await unassigned(savings)) < BigInt(m.amount)) continue; // not arrived yet
+    // Claim it first, so two runs at once can't put the same money in twice.
+    if (!(await one("UPDATE savings_moves SET status = 'allocating' WHERE id = $1 AND status = 'pending' RETURNING id", [m.id]))) continue;
     const tx = await sendAllocate(savings, BigInt(m.pot), BigInt(m.amount));
-    if (!tx.ok) continue;
+    if (!tx.ok) {
+      await q("UPDATE savings_moves SET status = 'pending' WHERE id = $1", [m.id]);
+      continue;
+    }
     await q("UPDATE savings_moves SET status = 'done', tx_hash = COALESCE(tx_hash, $1) WHERE id = $2", [tx.hash, m.id]);
     await logDecision(b.id, "save", `Put ${fromUnits(m.amount)} USDC into ${await potName(savings, m.pot)}`, "Money you sent to savings went into the savings pot you chose.", {
       moveId: m.id,

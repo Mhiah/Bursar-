@@ -22,12 +22,15 @@ export function loginMessage(host: string) {
   return { message: body, token: `${nonce}.${expires}.${sign(`${nonce}.${expires}.${host}`)}` };
 }
 
-export function checkLoginToken(token: string, message: string, host: string) {
+export async function checkLoginToken(token: string, message: string, host: string) {
   const [nonce, expires, mac] = token.split(".");
   if (!nonce || !expires || !mac) return false;
   if (Date.now() > Number(expires)) return false;
   if (!safeEqual(mac, sign(`${nonce}.${expires}.${host}`))) return false;
-  return message.includes(`Nonce: ${nonce}`) && message.includes(`at ${host}\n`);
+  if (!(message.includes(`Nonce: ${nonce}`) && message.includes(`at ${host}\n`))) return false;
+  // Each sign-in message works once.
+  const fresh = await one("INSERT INTO used_nonces (nonce) VALUES ($1) ON CONFLICT DO NOTHING RETURNING nonce", [nonce]);
+  return !!fresh;
 }
 
 export function setSession(address: Address) {

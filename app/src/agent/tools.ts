@@ -12,6 +12,17 @@ import { applyPayment } from "./incoming";
 
 /** Reminders per invoice before the agent stops and tells the owner. */
 export const MAX_REMINDERS = 3;
+
+/**
+ * Messages to customers must never carry a wallet address or a link the agent wrote: names and notes
+ * reach the agent's prompt, so a planted "pay to 0x..." must not end up in an email. The real pay link is added by code.
+ */
+function unsafeText(...parts: string[]) {
+  const t = parts.join(" ");
+  if (/0x[0-9a-fA-F]{40}/.test(t) || /https?:\/\/|www\./i.test(t))
+    return "Not sent: messages can't contain wallet addresses or links. Write it again without them; the pay link is added for you.";
+  return null;
+}
 import { dryRun, send } from "./wallet";
 
 export type BillCtx = {
@@ -169,6 +180,8 @@ export function buildTools(ctx: ToolCtx) {
       run: async ({ request_id, channels, subject, message, reason }) => {
         const r = reqById.get(request_id);
         if (!r) return "No open request with that id.";
+        const bad = unsafeText(subject, message);
+        if (bad) return bad;
         // After this many reminders, more of them won't help: hand it to the owner, once.
         if (Number(r.times_chased) >= MAX_REMINDERS) {
           if (!r.chasing_stopped_at) {
@@ -232,6 +245,13 @@ export function buildTools(ctx: ToolCtx) {
         if (total !== outstanding) return `Parts must add up to exactly ${fromUnits(outstanding)} USDC.`;
         if (!plan.every((p) => /^\d{4}-\d{2}-\d{2}$/.test(p.due_date))) return "Dates must be YYYY-MM-DD.";
         if (daysUntil(plan[plan.length - 1].due_date) > settings.maxInstalmentDays) return `Plan must end within ${settings.maxInstalmentDays} days.`;
+        // The same limits as reminders: an offer is a message to the customer too.
+        if (Number(r.times_chased) >= MAX_REMINDERS) return `Not sent: already contacted ${r.times_chased} times. Leave it to the owner.`;
+        if (r.last_chased && Date.now() - new Date(r.last_chased).getTime() < settings.chaseEveryDays * 864e5)
+          return `Not sent: last message was under ${settings.chaseEveryDays} days ago.`;
+        if (r.last_tried && Date.now() - new Date(r.last_tried).getTime() < 864e5) return "Not sent: already tried in the last day.";
+        const bad = unsafeText(message);
+        if (bad) return bad;
         const stored = plan.map((p) => ({ amount: toUnits(p.amount_usdc).toString(), due_date: p.due_date }));
         await q("UPDATE payment_requests SET instalments = $1 WHERE id = $2", [JSON.stringify(stored), r.id]);
         const lines = plan.map((p) => `• ${p.amount_usdc} USDC by ${p.due_date}`).join("\n");
@@ -239,6 +259,8 @@ export function buildTools(ctx: ToolCtx) {
         const results: string[] = [];
         for (const ch of channels.filter((c) => settings.chaseChannels.includes(c)))
           results.push(await recordChase(r, ch, text, `Payment plan for invoice ${r.invoice_no}`));
+        if (results.some((x) => x.includes(": sent"))) r.last_chased = new Date().toISOString();
+        r.last_tried = new Date().toISOString();
         await logDecision(bid, "instalment", `Offered ${r.customer_name} ${plan.length} instalments on invoice ${r.invoice_no}`, reason, {
           requestId: r.id,
           plan: stored,

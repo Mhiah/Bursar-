@@ -158,3 +158,19 @@ CREATE INDEX IF NOT EXISTS idx_savings_moves_business ON savings_moves (business
 ALTER TABLE payment_requests ADD COLUMN IF NOT EXISTS chasing_stopped_at TIMESTAMPTZ;
 -- When every wallet the business deals with was last re-checked.
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS wallets_checked_at TIMESTAMPTZ;
+-- Only one agent run per business at a time, even across processes (timer, worker, button).
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS agent_lease_until TIMESTAMPTZ;
+-- When the owner last pressed "Run the agent now", to stop it being pressed in a loop.
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS last_manual_run_at TIMESTAMPTZ;
+-- One savings deposit transaction is recorded once.
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_savings_moves_tx ON savings_moves (tx_hash) WHERE source = 'owner';
+-- What the agent has paid for AI, per day, so a daily cap holds.
+CREATE TABLE IF NOT EXISTS ai_spend (
+  day DATE PRIMARY KEY,
+  amount BIGINT NOT NULL DEFAULT 0
+);
+-- Sign-in nonces already used, so a signed sign-in message works once.
+CREATE TABLE IF NOT EXISTS used_nonces (
+  nonce TEXT PRIMARY KEY,
+  used_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

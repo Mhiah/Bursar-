@@ -32,7 +32,8 @@ export function handler<A extends unknown[]>(fn: (...args: A) => Promise<unknown
     } catch (e) {
       if (e instanceof HttpError) return NextResponse.json({ error: e.message }, { status: e.status });
       console.error(e);
-      const msg = e instanceof Error ? e.message : "Something went wrong.";
+      // Library errors can include the private RPC URL (and its key); never send URLs back.
+      const msg = (e instanceof Error ? e.message : "Something went wrong.").replace(/URL:.*$/gm, "").replace(/https?:\/\/\S+/g, "[hidden]").trim();
       const dup = /duplicate key|unique constraint/i.test(msg);
       return NextResponse.json({ error: dup ? "That already exists." : msg }, { status: dup ? 409 : 500 });
     }

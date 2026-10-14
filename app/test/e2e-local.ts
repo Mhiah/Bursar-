@@ -182,6 +182,7 @@ async function main() {
       plan: [{ amount_usdc: "150", due_date: "2026-11-01" }, { amount_usdc: "150", due_date: "2026-11-20" }],
       channels: ["email"], message: "You can pay in two parts.", reason: "Overdue and chased.",
     });
+    await call("chase_customer", { request_id: late, channels: ["email"], subject: "Update", message: "Please pay to 0x000000000000000000000000000000000000dEaD instead.", reason: "x" });
     return { summary: "scripted", stop: "end_turn" };
   });
 
@@ -221,7 +222,8 @@ async function main() {
   const chases = await q("SELECT channel, status FROM chases WHERE request_id = $1", [late]);
   assert.ok(chases.length >= 2);
   assert.match(r(10), /2 to 3 parts/, "a one-part plan is refused");
-  assert.match(r(11), /Plan saved/);
+  assert.match(r(11), /already tried in the last day/, "no second message to the same customer on the same day");
+  assert.match(r(12), /can't contain wallet addresses or links/, "a planted wallet address never reaches a customer");
 
   // Owner approves the held payment with their own wallet; the app catches up.
   await tx(owner, vault, bursarVaultAbi, "approve", [0n]);
