@@ -111,7 +111,7 @@ export default function Home() {
         </div>
 
         <div className="relative">
-          <div className="rounded-2xl border border-rule bg-card p-6 shadow-[0_24px_60px_-30px_rgba(27,26,23,0.35)]">
+          <div className="rounded-2xl border border-rule bg-card p-6 shadow-[0_24px_60px_-30px_rgba(10,17,40,0.35)]">
             <div className="mb-3 flex items-center justify-between border-b border-dashed border-line pb-3">
               <span className="flex items-center gap-2 font-serif text-xl">
                 <Mark size={24} mood="duty" /> Today&apos;s ledger

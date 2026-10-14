@@ -1,23 +1,23 @@
 import type { Config } from "tailwindcss";
 
-// The "Ledger" look: warm paper, ink, a bookkeeper's green and a clay stamp colour.
+// Colours: blue #0066FF, dark navy #0A1128 for headings and dark areas, white and light blue #EAF6FF backgrounds.
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        paper: "#F6F2EA",
-        cream: "#FBF8F1",
-        card: "#FFFDF8",
-        ink: "#1B1A17",
-        body: "#4A463F",
-        muted: "#5E5A52",
-        rule: "#E2DBCD",
-        "rule-soft": "#EFE9DD",
-        line: "#CFC6B4",
-        brand: { DEFAULT: "#1F4D3A", light: "#2A634B", soft: "#E2EDE6", dot: "#2E7D57" },
-        clay: { DEFAULT: "#8A4A26", dark: "#7A3F1F", soft: "#F3E3D6", line: "#E7C9B2" },
-        bad: { DEFAULT: "#A3261F", soft: "#F7E1DE" },
+        paper: "#FFFFFF",
+        cream: "#EAF6FF",
+        card: "#FFFFFF",
+        ink: "#0A1128",
+        body: "#3A4256",
+        muted: "#5A6378",
+        rule: "#D9E4F0",
+        "rule-soft": "#EBF1F7",
+        line: "#C4D3E3",
+        brand: { DEFAULT: "#0066FF", light: "#1A75FF", soft: "#EAF6FF", dot: "#0066FF" },
+        clay: { DEFAULT: "#0052CC", dark: "#0A1128", soft: "#EAF6FF", line: "#BBD9FF" },
+        bad: { DEFAULT: "#C62828", soft: "#FDECEC" },
       },
       fontFamily: {
         serif: ["var(--font-serif)", "Arial Narrow", "system-ui", "sans-serif"],

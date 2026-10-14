@@ -20,7 +20,7 @@ body {
     @apply inline-flex items-center justify-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-sm font-medium text-card transition hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-ink {
-    @apply inline-flex items-center justify-center gap-2 rounded-[10px] bg-ink px-4 py-2.5 text-sm font-medium text-paper transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] bg-ink px-4 py-2.5 text-sm font-medium text-paper transition hover:bg-brand disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 rounded-[10px] border border-line bg-card px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-cream disabled:cursor-not-allowed disabled:opacity-50;
