@@ -20,9 +20,9 @@ const config: Config = {
         bad: { DEFAULT: "#C62828", soft: "#FDECEC" },
       },
       fontFamily: {
-        serif: ["SF Pro Display", "SF Pro", "-apple-system", "BlinkMacSystemFont", "var(--font-inter)", "sans-serif"],
-        sans: ["SF Pro Text", "SF Pro", "-apple-system", "BlinkMacSystemFont", "var(--font-inter)", "sans-serif"],
-        mono: ["SF Pro Text", "SF Pro", "-apple-system", "BlinkMacSystemFont", "var(--font-inter)", "sans-serif"],
+        serif: ["var(--font-inter)", "Inter", "sans-serif"],
+        sans: ["var(--font-inter)", "Inter", "sans-serif"],
+        mono: ["var(--font-inter)", "Inter", "sans-serif"],
       },
     },
   },
