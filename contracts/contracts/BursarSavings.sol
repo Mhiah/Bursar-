@@ -9,7 +9,8 @@ import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 /// @title BursarSavings
 /// @notice A business's savings, kept apart from its vault and owned only by the business.
 /// Money arrives as plain USDC transfers (from the vault, or anyone) and waits as "unassigned"
-/// until the owner or the agent puts it into a savings pot. The agent can only put money into pots;
+/// until the owner or the agent puts it into a savings pot. The agent can only put money into pots
+/// (and into a Locked pot only if the owner allowed it for that pot);
 /// it can never take money out. Only the owner can take money out, and never from a Locked
 /// pot before its date. There is no admin key: nobody, Bursar included, can open a lock early.
 contract BursarSavings is ReentrancyGuard, Multicall {
@@ -37,16 +38,20 @@ contract BursarSavings is ReentrancyGuard, Multicall {
     Pot[] internal _pots;
     /// @notice Total held in pots. Anything above it in the balance is unassigned.
     uint256 public allocated;
+    /// @notice Locked pots the owner lets the agent add to. Flex and Target pots are always open to it.
+    mapping(uint256 => bool) public agentMayFill;
 
     event PotCreated(uint256 indexed id, string name, Kind kind, uint256 goal, uint256 date);
     event LockExtended(uint256 indexed id, uint256 date);
     event Allocated(uint256 indexed id, uint256 amount, address by);
     event Withdrawn(uint256 indexed id, address to, uint256 amount);
     event AgentChanged(address indexed agent);
+    event AgentMayFill(uint256 indexed id, bool ok);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     error NotOwner();
     error NotOwnerOrAgent();
+    error AgentCantFillLocked();
     error NoSuchPot();
     error StillLocked();
     error LockInPast();
@@ -93,9 +98,11 @@ contract BursarSavings is ReentrancyGuard, Multicall {
     // ---------------------------------------------------------------- owner and agent
 
     /// @notice Put unassigned money into a pot. The agent may do this too; it moves nothing out.
+    /// The agent can't put money into a Locked pot unless the owner allowed it for that pot.
     function allocate(uint256 id, uint256 amount) external {
         if (msg.sender != owner && msg.sender != agent) revert NotOwnerOrAgent();
         if (id >= _pots.length) revert NoSuchPot();
+        if (msg.sender != owner && _pots[id].kind == Kind.Locked && !agentMayFill[id]) revert AgentCantFillLocked();
         if (amount == 0) revert ZeroAmount();
         if (amount > unassigned()) revert NotEnough();
         _pots[id].balance += uint128(amount);
@@ -135,6 +142,13 @@ contract BursarSavings is ReentrancyGuard, Multicall {
         allocated -= amount;
         token.safeTransfer(to, amount);
         emit Withdrawn(id, to, amount);
+    }
+
+    /// @notice Let the agent add to a Locked pot (or stop it).
+    function setAgentMayFill(uint256 id, bool ok) external onlyOwner {
+        if (id >= _pots.length) revert NoSuchPot();
+        agentMayFill[id] = ok;
+        emit AgentMayFill(id, ok);
     }
 
     function setAgent(address agent_) external onlyOwner {

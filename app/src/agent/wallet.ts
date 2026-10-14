@@ -44,7 +44,6 @@ type Write =
   | { functionName: "agentPay"; args: readonly [Address, bigint, Hex, Hex] }
   | { functionName: "requestApproval"; args: readonly [Address, bigint, Hex, Hex, Hex] }
   | { functionName: "moveToReserve"; args: readonly [bigint] }
-  | { functionName: "releaseReserve"; args: readonly [bigint] }
   | { functionName: "recordDecision"; args: readonly [Hex] };
 
 export const circleChain = () => process.env.CIRCLE_CHAIN || (network === "mainnet" ? "ARC" : "ARC-TESTNET");

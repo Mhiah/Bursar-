@@ -20,7 +20,7 @@ const KIND_NOTE = {
   Locked: "Can't be taken out before its date. Nobody can open it early, not even Bursar.",
   Target: "Save toward a goal amount by a date. Take money out anytime.",
 };
-type Pot = { id: number; name: string; kind: (typeof KINDS)[number]; balance: bigint; goal: bigint; date: number };
+type Pot = { id: number; name: string; kind: (typeof KINDS)[number]; balance: bigint; goal: bigint; date: number; agentMayFill: boolean };
 
 export default function Savings() {
   const { business, vault } = useBusiness();
@@ -132,7 +132,8 @@ function SavingsAccount({
       const list: Pot[] = [];
       for (let i = 0; i < count; i++) {
         const p = await read("pot", [BigInt(i)]);
-        list.push({ id: i, name: p.name, kind: KINDS[p.kind], balance: p.balance, goal: p.goal, date: Number(p.date) });
+        const agentMayFill = KINDS[p.kind] !== "Locked" || ((await read("agentMayFill", [BigInt(i)])) as boolean);
+        list.push({ id: i, name: p.name, kind: KINDS[p.kind], balance: p.balance, goal: p.goal, date: Number(p.date), agentMayFill });
       }
       setPots(list);
       setUnassigned(await read("unassigned"));
@@ -179,7 +180,7 @@ function SavingsAccount({
         <NewPot savings={savings} owner={owner} onDone={async (msg) => { setDone(msg); await refresh(); }} />
       </section>
 
-      <SaveWhenPaid pots={pots} plans={plans} setup={setup} maxPerPayment={maxPerPayment} onSaved={async (msg) => { setDone(msg); await reload(); }} />
+      <SaveWhenPaid pots={pots} savings={savings} signer={signer} plans={plans} setup={setup} maxPerPayment={maxPerPayment} onSaved={async (msg) => { setDone(msg); await reload(); }} />
 
       <ChangesBar />
 
@@ -350,7 +351,9 @@ function PotCard({
                   const units = parseUnits(amount.trim(), 6);
                   if (mode === "add") {
                     const txHash = await ownerCall(client, vault, "withdraw", [savings, units]);
-                    await api("/api/savings/deposit", { method: "POST", json: { pot: p.id, txHash } });
+                    // The agent can't add to a Locked pot you haven't opened to it, so you put the money in yourself.
+                    if (!p.agentMayFill) await savingsCall(client, savings, "allocate", [BigInt(p.id), units]);
+                    else await api("/api/savings/deposit", { method: "POST", json: { pot: p.id, txHash } });
                     await onDone(`${amount} USDC moved from your vault into ${p.name}.`);
                   } else {
                     await savingsCall(client, savings, "withdraw", [BigInt(p.id), getAddress(to), units]);
@@ -438,12 +441,16 @@ function NewPot({ savings, owner, onDone }: { savings: Address; owner: string; o
 /** Save when paid. Kept by Bursar, so saving it needs no wallet. The vault's rules still cap every saving. */
 function SaveWhenPaid({
   pots,
+  savings,
+  signer,
   plans,
   setup,
   maxPerPayment,
   onSaved,
 }: {
   pots: Pot[];
+  savings: Address;
+  signer: { ready: boolean; client: any };
   plans: any;
   setup: { approved: boolean; budget: bigint; left: bigint } | null;
   maxPerPayment: string;
@@ -452,7 +459,14 @@ function SaveWhenPaid({
   const act = useAction();
   const w = plans.whenPaid;
   const [paid, setPaid] = useState({ pot: w?.pot ?? 0, percent: w ? String(w.percent) : "" });
-  const save = (json: unknown, msg: string) => act.run(async () => {
+  const chosen = pots.find((p) => p.id === paid.pot);
+  const needsOk = !!chosen && !chosen.agentMayFill;
+  const save = (json: unknown, msg: string, open = false) => act.run(async () => {
+    // A Locked pot needs your one-time OK in your wallet before the agent can add to it.
+    if (open && needsOk) {
+      if (!signer.ready) throw new Error("Connect your wallet first: this is a Locked pot.");
+      await savingsCall(signer.client, savings, "setAgentMayFill", [BigInt(paid.pot), true]);
+    }
     await api("/api/savings/plans", { method: "POST", json });
     await onSaved(msg);
   });
@@ -491,6 +505,7 @@ function SaveWhenPaid({
           </select>
         </Field>
       </div>
+      {needsOk && <p className="text-xs text-ink">This is a Locked pot. Your wallet will ask you once to let the agent add to it.</p>}
       {warnings.map((m) => (
         <Notice key={m} kind="warn">{m}</Notice>
       ))}
@@ -498,7 +513,7 @@ function SaveWhenPaid({
         <button
           className="btn"
           disabled={act.busy || !paid.percent || isNaN(Number(paid.percent))}
-          onClick={() => save({ whenPaid: { pot: paid.pot, percent: Number(paid.percent) } }, "Save when paid saved.")}
+          onClick={() => save({ whenPaid: { pot: paid.pot, percent: Number(paid.percent) } }, "Save when paid saved.", true)}
         >
           Save
         </button>

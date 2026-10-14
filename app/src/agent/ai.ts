@@ -15,7 +15,7 @@ const BLOCKRUN_URL = () => process.env.BLOCKRUN_URL || "https://arc.blockrun.ai/
 /** The most one AI call may cost, in USDC. */
 const maxPerCall = () => parseUnits(process.env.AI_MAX_USDC_PER_CALL || "0.10", 6);
 /** The most the agent wallet may spend on AI in one day, across every business, in USDC. */
-const maxPerDay = () => parseUnits(process.env.AI_MAX_USDC_PER_DAY || "2", 6);
+const maxPerDay = () => parseUnits(process.env.AI_MAX_USDC_PER_DAY || "0.25", 6);
 
 const spentToday = async () => BigInt((await one<{ amount: string }>("SELECT amount FROM ai_spend WHERE day = CURRENT_DATE"))?.amount ?? 0);
 const addSpend = (amount: bigint) =>

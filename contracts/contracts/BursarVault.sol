@@ -179,10 +179,6 @@ contract BursarVault is ReentrancyGuard, Multicall {
         emit ReserveMoved(amount, 0, reserve);
     }
 
-    function releaseReserve(uint256 amount) external onlyAgent {
-        _release(amount);
-    }
-
     /// @notice Anchor a decision-log entry onchain so it can't be edited later.
     function recordDecision(bytes32 logHash) external onlyAgent {
         emit Decision(logHash);

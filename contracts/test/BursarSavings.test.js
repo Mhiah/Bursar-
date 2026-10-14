@@ -54,6 +54,20 @@ describe("BursarSavings", () => {
     await expect(savings.connect(stranger).allocate(0, 1)).to.be.revertedWithCustomError(savings, "NotOwnerOrAgent");
   });
 
+  it("lets the agent add to a Locked pot only when the owner allowed it", async () => {
+    const unlock = (await time.latest()) + 30 * 86400;
+    await savings.createPot("Tax", Kind.Locked, 0, unlock);
+    await usdc.mint(await savings.getAddress(), usd(20));
+    await expect(savings.connect(agent).allocate(0, usd(10))).to.be.revertedWithCustomError(savings, "AgentCantFillLocked");
+    await savings.allocate(0, usd(5)); // the owner always can
+    await expect(savings.connect(agent).setAgentMayFill(0, true)).to.be.revertedWithCustomError(savings, "NotOwner");
+    await savings.setAgentMayFill(0, true);
+    await savings.connect(agent).allocate(0, usd(10));
+    expect((await savings.pot(0)).balance).to.equal(usd(15));
+    await savings.setAgentMayFill(0, false);
+    await expect(savings.connect(agent).allocate(0, usd(5))).to.be.revertedWithCustomError(savings, "AgentCantFillLocked");
+  });
+
   it("can't put in more than has arrived", async () => {
     await flex();
     await usdc.mint(await savings.getAddress(), usd(5));

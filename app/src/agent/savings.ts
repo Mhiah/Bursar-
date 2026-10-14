@@ -29,6 +29,13 @@ async function potName(savings: Address, pot: number) {
   }
 }
 
+/** The agent may add to Flex and Target pots, and to a Locked pot only if the owner allowed it. */
+async function agentMayFill(savings: Address, pot: number) {
+  const p = await publicClient.readContract({ address: savings, abi: bursarSavingsAbi, functionName: "pot", args: [BigInt(pot)] });
+  if (p.kind !== 1) return true;
+  return publicClient.readContract({ address: savings, abi: bursarSavingsAbi, functionName: "agentMayFill", args: [BigInt(pot)] });
+}
+
 const unassigned = (savings: Address) => publicClient.readContract({ address: savings, abi: bursarSavingsAbi, functionName: "unassigned" });
 
 /**
@@ -99,6 +106,13 @@ async function moveFromVault(
   const what = "Save when paid";
   const name = await potName(savings, pot);
   const id = newId();
+  if (!(await agentMayFill(savings, pot))) {
+    await q("INSERT INTO savings_moves (id, business_id, pot, amount, source, payment_id, status, error) VALUES ($1,$2,$3,$4,$5,$6,'failed',$7)", [
+      id, b.id, pot, amount.toString(), source, paymentId, "AgentCantFillLocked",
+    ]);
+    await logDecision(b.id, "save", `Didn't save ${fromUnits(amount)} USDC (${what})`, `Skipped because ${name} is a Locked pot you haven't let the agent add to.`, { pot, source, paymentId });
+    return false;
+  }
   const refused = await dryRun(vault, savings, amount, categoryKey(SAVINGS_CATEGORY), ref);
   if (refused) {
     await q("INSERT INTO savings_moves (id, business_id, pot, amount, source, payment_id, status, error) VALUES ($1,$2,$3,$4,$5,$6,'failed',$7)", [

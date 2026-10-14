@@ -150,9 +150,12 @@ describe("BursarVault", () => {
       // reserve can't be spent by the agent
       await expect(vault.connect(agent).agentPay(supplier, usd(60), cat("suppliers"), ref("x")))
         .to.be.revertedWithCustomError(vault, "BelowCashFloor");
-      await vault.connect(agent).releaseReserve(usd(400));
+      // only the owner can release the reserve
+      expect(vault.connect(agent).releaseReserve).to.equal(undefined);
+      await expect(vault.connect(agent).ownerReleaseReserve(usd(400))).to.be.revertedWithCustomError(vault, "NotOwner");
+      await vault.ownerReleaseReserve(usd(400));
       expect(await vault.operating()).to.equal(usd(500));
-      await expect(vault.connect(agent).releaseReserve(usd(501))).to.be.revertedWithCustomError(vault, "InsufficientReserve");
+      await expect(vault.ownerReleaseReserve(usd(501))).to.be.revertedWithCustomError(vault, "InsufficientReserve");
     });
   });
 

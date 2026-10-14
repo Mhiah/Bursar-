@@ -153,20 +153,6 @@ export function buildTools(ctx: ToolCtx) {
       },
     }),
     betaZodTool({
-      name: "release_reserve",
-      description: "Bring reserve back into operating cash, e.g. to cover bills due soon.",
-      inputSchema: z.object({ amount_usdc: z.string(), reason }),
-      run: async ({ amount_usdc, reason }) => {
-        const amount = toUnits(amount_usdc);
-        const tx = await send(vault, { functionName: "releaseReserve", args: [amount] });
-        if (!tx.ok) return `Not released: ${tx.error}`;
-        cash.operating += amount;
-        cash.reserve -= amount;
-        await logDecision(bid, "release", `Released ${fromUnits(amount)} USDC from reserve`, reason, { tx: tx.hash });
-        return `Released. Operating cash is now about ${fromUnits(cash.operating)} USDC.`;
-      },
-    }),
-    betaZodTool({
       name: "match_payment",
       description: "Link a received payment that couldn't be matched automatically to the invoice it pays.",
       inputSchema: z.object({ payment_id: z.string(), request_id: z.string(), reason }),
