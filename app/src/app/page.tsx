@@ -93,7 +93,7 @@ export default function Home() {
           <h1 className="mt-5 font-serif text-5xl leading-[1.02] md:text-7xl">
             Keeps your books.
             <br />
-            <em className="text-brand">Never</em> breaks your rules.
+            <em className="marker">Never</em> breaks your rules.
           </h1>
           <p className="mt-6 max-w-xl text-lg text-body">
             Bursar collects what customers owe, pays your bills on time, keeps a reserve and checks every wallet before money moves. All in USDC,

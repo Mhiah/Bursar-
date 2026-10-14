@@ -8,10 +8,10 @@ body {
 
 @layer components {
   .h-page {
-    @apply font-serif text-4xl font-normal leading-none tracking-tight md:text-[44px];
+    @apply font-serif text-4xl leading-none md:text-[44px];
   }
   .h-section {
-    @apply font-serif text-[26px] font-normal leading-tight;
+    @apply font-serif text-[26px] leading-tight;
   }
   .eyebrow {
     @apply font-mono text-xs uppercase tracking-[0.12em] text-clay;
@@ -55,4 +55,24 @@ body {
   .figure {
     @apply font-mono tabular-nums;
   }
+}
+
+/* Display font: Archivo, heavy and tight, like a poster headline. */
+.font-serif {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+/* Numbers inside a heading stay in the mono font's own weight. */
+.font-serif .font-mono,
+.font-serif .figure {
+  font-weight: 500;
+  letter-spacing: 0;
+}
+/* A highlighter stroke under a word in a headline. */
+.marker {
+  color: theme("colors.ink");
+  background: linear-gradient(transparent 58%, rgba(0, 102, 255, 0.35) 58%, rgba(0, 102, 255, 0.35) 92%, transparent 92%);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  padding: 0 0.04em;
 }
