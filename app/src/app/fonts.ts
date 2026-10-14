@@ -1,5 +1,4 @@
-import { Archivo, Figtree, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Mono } from "next/font/google";
 
-export const serif = Archivo({ subsets: ["latin"], style: ["normal", "italic"], variable: "--font-serif" });
-export const sans = Figtree({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-sans" });
+// Headings and text use the device's own system font; numbers use IBM Plex Mono.
 export const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });

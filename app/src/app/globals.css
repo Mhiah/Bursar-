@@ -57,10 +57,10 @@ body {
   }
 }
 
-/* Display font: Archivo, heavy and tight, like a poster headline. */
+/* Headings: the system font, bold and a little tight. */
 .font-serif {
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 /* Numbers inside a heading stay in the mono font's own weight. */
 .font-serif .font-mono,

@@ -20,8 +20,8 @@ const config: Config = {
         bad: { DEFAULT: "#C62828", soft: "#FDECEC" },
       },
       fontFamily: {
-        serif: ["var(--font-serif)", "Arial Narrow", "system-ui", "sans-serif"],
-        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+        serif: ["-apple-system", "BlinkMacSystemFont", "Roboto", "Helvetica Neue", "Nanum Gothic", "Segoe UI", "sans-serif"],
+        sans: ["-apple-system", "BlinkMacSystemFont", "Roboto", "Helvetica Neue", "Nanum Gothic", "Segoe UI", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
     },
