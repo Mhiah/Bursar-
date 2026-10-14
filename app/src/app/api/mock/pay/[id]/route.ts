@@ -12,10 +12,11 @@ import { syncIncoming } from "@/agent/incoming";
 const usdc = parseAbi(["function mint(address to, uint256 amount)", "function transfer(address to, uint256 amount) returns (bool)"]);
 
 /** Test mode only: a test customer pays this invoice with fake USDC, then the vault picks it up. */
-export const POST = handler(async (req: Request, { params }: { params: { id: string } }) => {
+export const POST = handler(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
   if (!MOCK) throw new HttpError(404, "Not found");
   const { amount } = await body(req, z.object({ amount: z.string().regex(/^\d+(\.\d{1,6})?$/) }));
-  const r = await one<{ business_id: string }>("SELECT business_id FROM payment_requests WHERE id = $1", [params.id]);
+  const r = await one<{ business_id: string }>("SELECT business_id FROM payment_requests WHERE id = $1", [id]);
   if (!r) throw new HttpError(404, "This payment link isn't valid.");
   const b = await one<Business>("SELECT * FROM businesses WHERE id = $1", [r.business_id]);
   if (!b?.vault_address) throw new HttpError(400, "This business has no vault yet.");

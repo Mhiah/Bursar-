@@ -10,12 +10,12 @@ const Input = z.object({ address: z.string().refine(isAddress), message: z.strin
 
 export const POST = handler(async (req: Request) => {
   const { address, message, signature, token } = await body(req, Input);
-  const host = headers().get("host") ?? "bursar";
+  const host = (await headers()).get("host") ?? "bursar";
   if (!(await checkLoginToken(token, message, host))) throw new HttpError(400, "Sign-in message expired. Try again.");
   // verifyMessage also handles smart-contract wallets (ERC-1271 / ERC-6492).
   const ok = await publicClient.verifyMessage({ address: getAddress(address), message, signature: signature as Hex });
   if (!ok) throw new HttpError(401, "Signature doesn't match this wallet.");
-  setSession(getAddress(address));
+  await setSession(getAddress(address));
   const business = await one("SELECT id, name, vault_address FROM businesses WHERE owner_address = $1", [getAddress(address)]);
   return { business: business ?? null };
 });

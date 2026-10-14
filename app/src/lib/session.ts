@@ -33,10 +33,10 @@ export async function checkLoginToken(token: string, message: string, host: stri
   return !!fresh;
 }
 
-export function setSession(address: Address) {
+export async function setSession(address: Address) {
   const exp = Math.floor(Date.now() / 1000) + MAX_AGE;
   const payload = `${getAddress(address)}.${exp}`;
-  cookies().set(COOKIE, `${payload}.${sign(payload)}`, {
+  (await cookies()).set(COOKIE, `${payload}.${sign(payload)}`, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -45,12 +45,12 @@ export function setSession(address: Address) {
   });
 }
 
-export function clearSession() {
-  cookies().delete(COOKIE);
+export async function clearSession() {
+  (await cookies()).delete(COOKIE);
 }
 
-export function sessionAddress(): Address | null {
-  const raw = cookies().get(COOKIE)?.value;
+export async function sessionAddress(): Promise<Address | null> {
+  const raw = (await cookies()).get(COOKIE)?.value;
   if (!raw) return null;
   const [addr, exp, mac] = raw.split(".");
   if (!addr || !exp || !mac) return null;
@@ -105,7 +105,7 @@ export const defaultSettings: Required<BusinessSettings> = {
 };
 
 export async function currentBusiness(): Promise<Business | null> {
-  const addr = sessionAddress();
+  const addr = await sessionAddress();
   if (!addr) return null;
   return (await one<Business>("SELECT * FROM businesses WHERE owner_address = $1", [addr])) ?? null;
 }

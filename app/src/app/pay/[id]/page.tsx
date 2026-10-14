@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { createWalletClient, custom, getAddress, parseUnits, type Address } from "viem";
 import { switchToArc } from "@/components/wallet";
 import { api, Field, Money, Notice, Status, TxLink, useAction, useApi } from "@/components/ui";
@@ -16,8 +16,9 @@ const erc20 = [
 
 type Method = "usdc" | "eurc" | "bridge";
 
-export default function Pay({ params }: { params: { id: string } }) {
-  const inv = useApi<any>(`/api/pay/${params.id}`);
+export default function Pay({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const inv = useApi<any>(`/api/pay/${id}`);
   const [method, setMethod] = useState<Method>("usdc");
   const [part, setPart] = useState<"full" | "instalment">("full");
   const [account, setAccount] = useState<Address | null>(null);
@@ -184,7 +185,7 @@ export default function Pay({ params }: { params: { id: string } }) {
               disabled={act.busy}
               onClick={() =>
                 act.run(async () => {
-                  const res = await api(`/api/mock/pay/${params.id}`, { method: "POST", json: { amount } });
+                  const res = await api(`/api/mock/pay/${id}`, { method: "POST", json: { amount } });
                   setSent({ hash: res.txHash, note: `A test customer paid ${amount} test USDC.` });
                   await inv.reload();
                 })

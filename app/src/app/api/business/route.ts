@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const GET = handler(async () => {
   const b = await currentBusiness();
-  if (!b) return { business: null, address: sessionAddress() };
+  if (!b) return { business: null, address: await sessionAddress() };
   let vault = null;
   if (b.vault_address) {
     const s = await readVault(b.vault_address as `0x${string}`);
@@ -31,7 +31,7 @@ export const GET = handler(async () => {
 const Create = z.object({ name: z.string().trim().min(1).max(120), email: z.string().email().optional().or(z.literal("")) });
 
 export const POST = handler(async (req: Request) => {
-  const owner = sessionAddress();
+  const owner = await sessionAddress();
   if (!owner) throw new HttpError(401, "Sign in first.");
   const { name, email } = await body(req, Create);
   const existing = await one("SELECT id FROM businesses WHERE owner_address = $1", [owner]);

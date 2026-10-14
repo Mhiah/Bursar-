@@ -2,6 +2,6 @@ import { handler } from "@/lib/api";
 import { clearSession } from "@/lib/session";
 
 export const POST = handler(async () => {
-  clearSession();
+  await clearSession();
   return { ok: true };
 });

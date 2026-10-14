@@ -5,3 +5,4 @@ node_modules
 .data
 *.tsbuildinfo
 .next-mock
+next-env.d.ts
