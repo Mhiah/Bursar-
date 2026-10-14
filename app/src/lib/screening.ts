@@ -3,17 +3,15 @@ import { publicClient } from "./chain";
 import { USDC } from "./arc";
 import { MOCK } from "./mock";
 import { one, q } from "./db";
+import ofacSnapshot from "./ofac-evm.json";
 
 export type Reason = { code: string; detail: string };
 export type Screening = { status: "clear" | "review" | "blocked"; reasons: Reason[]; checkedAt: string };
 
 const DAY = 24 * 3600 * 1000;
 
-/** Chainalysis free sanctions API. Returns the listed identifications, or null if the check couldn't run. */
-async function chainalysis(addr: Address): Promise<{ name: string; category: string }[] | null> {
-  const key = process.env.CHAINALYSIS_API_KEY;
-  // Test mode has no key: fake wallets on the local test chain are never on a sanctions list.
-  if (!key) return MOCK ? [] : null;
+/** Chainalysis sanctions API, used only when a key is set. Returns the listed identifications, or null if the check couldn't run. */
+async function chainalysis(addr: Address, key: string): Promise<{ name: string; category: string }[] | null> {
   try {
     const res = await fetch(`https://public.chainalysis.com/api/v1/address/${addr}`, {
       headers: { "X-API-Key": key, Accept: "application/json" },
@@ -25,6 +23,39 @@ async function chainalysis(addr: Address): Promise<{ name: string; category: str
   } catch {
     return null;
   }
+}
+
+/**
+ * The US Treasury (OFAC) sanctions list: every EVM wallet address on it. Free, no key.
+ * Pulled daily from a public copy that is rebuilt from the official list every night,
+ * with a copy kept in the app in case that download fails.
+ */
+const OFAC_LISTS = ["ETH", "USDC", "USDT", "ARB", "BSC", "ETC"].map(
+  (c) => `https://raw.githubusercontent.com/0xB10C/ofac-sanctioned-digital-currency-addresses/lists/sanctioned_addresses_${c}.json`,
+);
+let ofac: { set: Set<string>; at: number } | null = null;
+
+async function ofacList(): Promise<Set<string>> {
+  if (ofac && Date.now() - ofac.at < DAY) return ofac.set;
+  const set = new Set<string>((ofacSnapshot as string[]).map((a) => a.toLowerCase()));
+  try {
+    const lists = await Promise.all(OFAC_LISTS.map(async (u) => (await (await fetch(u, { cache: "no-store" })).json()) as string[]));
+    for (const a of lists.flat()) if (/^0x[0-9a-fA-F]{40}$/.test(a)) set.add(a.toLowerCase());
+    ofac = { set, at: Date.now() };
+  } catch {
+    // Use the copy in the app for now and try the download again in an hour.
+    ofac = { set, at: Date.now() - DAY + 3600_000 };
+  }
+  return set;
+}
+
+/** Is this wallet on a sanctions list? Returns who it belongs to, or null if the check couldn't run. */
+async function sanctioned(addr: Address): Promise<{ name: string; category: string }[] | null> {
+  const key = process.env.CHAINALYSIS_API_KEY;
+  if (key) return chainalysis(addr, key);
+  // Test mode: fake wallets on the local test chain are never on a sanctions list.
+  if (MOCK) return [];
+  return (await ofacList()).has(addr.toLowerCase()) ? [{ name: "US Treasury (OFAC) sanctions list", category: "sanctions" }] : [];
 }
 
 const blacklistAbi = [
@@ -50,7 +81,7 @@ export async function sanctionsCheck(address: string, { fresh = false } = {}): P
   const reasons: Reason[] = [];
   let status: Screening["status"] = "clear";
 
-  const [ids, blocked] = await Promise.all([chainalysis(addr), usdcBlocklisted(addr)]);
+  const [ids, blocked] = await Promise.all([sanctioned(addr), usdcBlocklisted(addr)]);
   if (ids === null) {
     reasons.push({ code: "sanctions_unchecked", detail: "The sanctions list couldn't be checked just now." });
     status = "review";
