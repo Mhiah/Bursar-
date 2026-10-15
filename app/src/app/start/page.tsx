@@ -273,8 +273,8 @@ function VaultStep({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="space-y-4">
-      <h1 className="h-page text-center sm:whitespace-nowrap">Create your business vault</h1>
-      <p className="text-center text-sm text-ink">
+      <h1 className="h-page sm:whitespace-nowrap">Create your business vault</h1>
+      <p className="text-sm text-ink">
         Your vault is a contract on Arc that your wallet owns. Payments land here. Bursar's agent gets a limited key that can only act inside these
         rules; you can change them, pause the agent, or remove it at any time.
       </p>

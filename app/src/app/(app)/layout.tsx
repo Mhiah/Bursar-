@@ -41,7 +41,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <BusinessContext.Provider value={{ business: data.business, vault: data.vault, reload }}>
       <div className="flex min-h-screen">
         <aside className="sticky top-0 hidden h-screen self-start w-64 shrink-0 flex-col border-r border-rule bg-cream px-5 py-6 md:flex">
-          <Link href="/dashboard" className="mb-1 flex items-center no-underline">
+          <Link href="/" className="mb-1 flex items-center no-underline" aria-label="Bursar home">
             <Wordmark height={42} />
           </Link>
           <p className="mb-7 truncate pl-0.5 text-xs text-ink">{data.business.name}</p>
@@ -81,7 +81,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </aside>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1 overflow-x-auto border-b border-rule bg-cream px-4 py-2 md:hidden">
-            <Mark size={22} mood={agentMood} className="mr-1 shrink-0" />
+            <Link href="/" aria-label="Bursar home" className="mr-1 shrink-0">
+              <Mark size={22} mood={agentMood} />
+            </Link>
             {nav.map(([href, label]) => (
               <Link key={href} href={href} className={`whitespace-nowrap rounded-md px-2.5 py-1 text-xs no-underline ${path === href ? "bg-ink text-paper" : "text-ink"}`}>
                 {label}
