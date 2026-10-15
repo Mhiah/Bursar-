@@ -102,12 +102,6 @@ export default function Invoices() {
                         {qr === r.id ? "Hide QR code" : "QR code"}
                       </button>
                       {qr === r.id && <PayQr url={link(r.id)} invoiceNo={r.invoice_no} />}
-                      <button
-                        className="ml-3 text-xs text-ink"
-                        onClick={() => act.run(async () => { await api(`/api/requests/${r.id}`, { method: "PATCH", json: { action: "cancel" } }); await reqs.reload(); })}
-                      >
-                        Cancel
-                      </button>
                     </>
                   )}
                 </td>
