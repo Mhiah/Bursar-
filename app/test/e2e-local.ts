@@ -174,7 +174,7 @@ async function main() {
     await call("pay_bill", { bill_id: twinBill, early: false, reason: "Due." });
     await call("move_to_reserve", { amount_usdc: "200", reason: "Spare cash." });
     await call("move_to_reserve", { amount_usdc: "1000", reason: "Too much." });
-    await call("chase_customer", { request_id: late, channels: ["email", "telegram"], subject: "Invoice INV-2", message: "Hi Ada, a reminder.", reason: "Overdue." });
+    await call("chase_customer", { request_id: late, channels: ["email"], subject: "Invoice INV-2", message: "Hi Ada, a reminder.", reason: "Overdue." });
     await call("chase_customer", { request_id: late, channels: ["email"], subject: "Again", message: "Again.", reason: "Overdue." });
     await call("offer_instalments", { request_id: late, plan: [{ amount_usdc: "100", due_date: "2026-11-01" }], channels: ["email"], message: "x", reason: "x" });
     await call("offer_instalments", {
@@ -218,9 +218,9 @@ async function main() {
   assert.equal(await pub.readContract({ address: vault, abi: bursarVaultAbi, functionName: "reserve" }), usd(200));
 
   // Chasing: channels without a provider are recorded as skipped; no double reminder.
-  assert.match(r(8), /email: skipped \(Email isn't set up\); telegram: skipped/);
+  assert.match(r(8), /email: skipped \(Email isn't set up\)/);
   const chases = await q("SELECT channel, status FROM chases WHERE request_id = $1", [late]);
-  assert.ok(chases.length >= 2);
+  assert.ok(chases.length >= 1);
   assert.match(r(10), /2 to 3 parts/, "a one-part plan is refused");
   assert.match(r(11), /already tried in the last day/, "no second message to the same customer on the same day");
   assert.match(r(12), /can't contain wallet addresses or links/, "a planted wallet address never reaches a customer");

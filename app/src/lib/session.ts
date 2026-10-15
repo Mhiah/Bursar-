@@ -99,7 +99,7 @@ export const defaultSettings: Required<BusinessSettings> = {
   maxInstalments: 3,
   maxInstalmentDays: 60,
   minInstalmentAmount: 0,
-  chaseChannels: ["email", "telegram", "whatsapp"],
+  chaseChannels: ["email"],
   chaseEveryDays: 3,
   earlyPayDays: 7,
 };

@@ -239,22 +239,16 @@ export default function Settings() {
         <div>
           <span className="label">Chase customers on</span>
           <div className="flex gap-4 text-sm">
-            {(["email", "telegram", "whatsapp"] as const).map((c) => (
-              <label key={c} className="flex items-center gap-1.5">
-                <input
-                  type="checkbox"
-                  checked={s.chaseChannels.includes(c)}
-                  onChange={(e) => setS({ ...s, chaseChannels: e.target.checked ? [...s.chaseChannels, c] : s.chaseChannels.filter((x: string) => x !== c) })}
-                />
-                {{ email: "Email", telegram: "Telegram", whatsapp: "WhatsApp" }[c]}
-              </label>
-            ))}
+            <label className="flex items-center gap-1.5">
+              <input type="checkbox" checked readOnly tabIndex={-1} className="pointer-events-none" />
+              Email
+            </label>
           </div>
         </div>
         <button
           className="btn"
           disabled={saveSettings.busy}
-          onClick={() => saveSettings.run(async () => { await api("/api/business/settings", { method: "POST", json: s }); await reload(); setDone("How the agent works is saved. This part needs no wallet."); })}
+          onClick={() => saveSettings.run(async () => { await api("/api/business/settings", { method: "POST", json: { ...s, chaseChannels: ["email"] } }); await reload(); setDone("How the agent works is saved. This part needs no wallet."); })}
         >
           Save
         </button>

@@ -34,7 +34,8 @@ export async function customerReliability(businessId: string, customerId: string
   }
   const settled = paidOnTime + paidLate;
   const avgDaysLate = paidLate ? lateDays / paidLate : 0;
-  if (settled === 0 && overdueNow === 0) return { score: 60, paidOnTime, paidLate, avgDaysLate, overdueNow, outstanding, label: "new" };
+  // No paid invoices yet: nothing to judge them on, so they're new, not risky.
+  if (settled === 0) return { score: 60, paidOnTime, paidLate, avgDaysLate, overdueNow, outstanding, label: "new" };
 
   let score = settled ? (paidOnTime / settled) * 100 : 50;
   score -= Math.min(30, avgDaysLate);

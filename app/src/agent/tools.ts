@@ -64,7 +64,8 @@ export function buildTools(ctx: ToolCtx) {
   const reqById = new Map(ctx.receivables.map((x) => [x.id, x]));
   const cash = ctx.cash;
   const reason = z.string().describe("Plain-language reason, written for the business owner.");
-  const channelsSchema = z.array(z.enum(["email", "telegram", "whatsapp"]));
+  // Customers are chased by email only for now.
+  const channelsSchema = z.array(z.enum(["email"]));
 
   const recordChase = async (r: any, ch: Channel, text: string, subject: string) => {
     const res = await sendMessage(ch, r, subject, text);
