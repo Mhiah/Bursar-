@@ -213,6 +213,10 @@ The end-to-end test deploys the contracts to a local chain and runs the server c
 | `app/src/agent` | The agent's run loop (`run.ts`), tools (`tools.ts`), timer, Circle wallet signer (`wallet.ts`), paid AI (`ai.ts`), payment matching (`incoming.ts`), daily wallet re-checks (`recheck.ts`) |
 | `app/src/lib` | SQL schema, wallet screening, bill checks, decision log, customer reliability scores, email |
 
+## Use the vault in your own app
+
+The reusable parts (the vault contracts, the Circle Agent Wallet signer, the wallet check and the decision log) are also in a standalone repo, so you can fork them without the rest of Bursar: [Mhiah/bursar-vault](https://github.com/Mhiah/bursar-vault).
+
 ## Licence
 
 MIT. See [LICENSE](LICENSE). Fork it, change it, ship on top of it.
