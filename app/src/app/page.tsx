@@ -52,11 +52,9 @@ const limits = [
 function Section({ id, title, lede, children }: { id: string; title: React.ReactNode; lede?: string; children: React.ReactNode }) {
   return (
     <section id={id} className={`${wrap} scroll-mt-6 py-12 md:py-16`}>
-      <div className="mb-8 grid gap-4 md:mb-10 lg:grid-cols-12 lg:items-end lg:gap-8">
-        <div className={lede ? "lg:col-span-7" : "lg:col-span-12"}>
-          <h2 className="text-balance font-serif text-[32px] leading-[1.08] sm:text-4xl md:text-[44px]">{title}</h2>
-        </div>
-        {lede && <p className="max-w-xl text-pretty text-ink lg:col-span-5 lg:max-w-md lg:justify-self-end">{lede}</p>}
+      <div className="mb-8 md:mb-10">
+        <h2 className="text-balance font-serif text-[32px] leading-[1.08] sm:text-4xl md:text-[44px]">{title}</h2>
+        {lede && <p className="mt-3 max-w-xl text-pretty text-xs text-ink">{lede}</p>}
       </div>
       {children}
     </section>
@@ -167,7 +165,7 @@ export default function Home() {
             Rules it <em className="text-ink">can&apos;t</em> break
           </>
         }
-        lede="The limits live in your vault contract, not in the agent's instructions. A wrong or tricked agent still can't go past them."
+        lede="The limits live in your vault contract, not in the agent's instructions."
       >
         <div className="overflow-hidden rounded-2xl border border-rule bg-card">
           <div className="flex items-center justify-between gap-4 bg-ink px-5 py-3 text-paper sm:px-6">
