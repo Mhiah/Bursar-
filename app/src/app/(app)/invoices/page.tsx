@@ -104,6 +104,11 @@ export default function Invoices() {
                       {qr === r.id && <PayQr url={link(r.id)} invoiceNo={r.invoice_no} />}
                     </>
                   )}
+                  {r.status === "paid" && (
+                    <a href={`/pay/${r.id}`} target="_blank" rel="noopener" className="text-xs text-ink">
+                      Receipt
+                    </a>
+                  )}
                 </td>
               </tr>
             ))}
