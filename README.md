@@ -7,7 +7,7 @@ The agent decides; the contract has the final say. The owner's rules live in a v
 Built for the Tameion Agents Hackathon (Canteen x Circle x Arc), brief 04: Autonomous Business Operator.
 
 - Demo video: _link coming_
-- Live site: _link coming_
+- Live site: https://bursar.myacxt.site
 
 ## What the agent does
 
@@ -15,6 +15,7 @@ The agent runs by itself on a timer (every 6 hours by default). Each run it look
 
 - **Matches payments** that arrived to the right invoice, and flags overpayments to the owner.
 - **Chases customers** by email: a heads-up before the due date, firmer reminders once late, and an instalment offer when that helps. After 3 reminders it stops and hands the customer to the owner.
+- **Tells customers when they've paid.** As soon as a payment is matched to an invoice, the customer gets a "Payment received" email, and paid invoices have a Receipt link.
 - **Pays bills** that are due, inside the rules. Anything above a limit, to a new wallet, or that looks wrong goes to the owner to approve.
 - **Catches duplicate and mismatched bills** before paying them.
 - **Checks wallets** against the US Treasury (OFAC) sanctions list, Circle's USDC blocklist and lookalike-address tricks. Customers are checked when added, and every wallet is re-checked daily.
@@ -27,9 +28,9 @@ The Overview shows "The agent's record": money in and out, bills paid on time wi
 
 `BursarVault` holds the business's USDC and enforces, onchain:
 
-- the most per payment (larger payments wait for the owner),
+- the most per payment, called "Most the agent may pay at once": the biggest single bill the agent pays alone, and bigger ones wait for the owner's approval,
 - a monthly budget per spending category,
-- the cash it must always keep,
+- the cash it must always keep, called "Cash to always keep": a balance the agent never spends below, so with 5000 set it can't pay anything until the vault holds more than 5000,
 - payments only to wallets the owner approved,
 - each bill paid once,
 - only the owner can use the reserve, change rules, approve wallets or take money out,
@@ -55,6 +56,15 @@ All rule changes go in one owner transaction (Multicall).
 | --- | --- |
 | BursarFactory | `0x1d872C07C1935fe5E3a28a9df0690C2caf7B5709` |
 | BursarSavingsFactory | `0xe7395461185d3d8964dDaA29B31b963Cfb96CB1c` |
+
+## Agent wallet and vault
+
+There are two kinds of wallet, and they do different jobs:
+
+- **The agent wallet** is Bursar's own running wallet, a Circle Agent Wallet. It pays for the AI calls and the small fees the agent needs, and Bursar's operator keeps it topped up. It never holds a business's money.
+- **Each business's vault** holds that business's money and nothing else. A business only needs to create a vault (a small one-off fee of about 0.05 USDC) and fund it. The vault's rules are the owner's, and the agent can act on it only inside them.
+
+Both rules above can be changed later on the Rules & settings page.
 
 ## Try it without real money
 
