@@ -4,6 +4,7 @@ import { publicClient } from "@/lib/chain";
 import { newId, one, q } from "@/lib/db";
 import { logDecision } from "@/lib/decisions";
 import { screenPayer } from "@/lib/screening";
+import { send } from "@/lib/notify";
 import { fromUnits } from "@/lib/money";
 import type { Business } from "@/lib/session";
 
@@ -109,5 +110,26 @@ export async function applyPayment(businessId: string, paymentId: string, reques
       { paymentId, requestId, extra },
     );
   }
+  const receipt = await sendReceipt(businessId, r.customer_id, r.invoice_no, p.amount, done ? 0n : BigInt(r.amount) - paid);
+  await logDecision(businessId, "note", `Payment received email for invoice ${r.invoice_no}: ${receipt}`, "The customer is told as soon as their payment is matched.", { requestId });
   return done ? "Matched; invoice paid in full" : `Matched; ${fromUnits(BigInt(r.amount) - paid)} USDC still due`;
+}
+
+/** Email the customer that their payment arrived. Never throws: a failed email must not undo the match. */
+async function sendReceipt(businessId: string, customerId: string, invoiceNo: string, amount: string, stillDue: bigint) {
+  try {
+    const b = await one<{ name: string }>("SELECT name FROM businesses WHERE id = $1", [businessId]);
+    const c = await one<{ name: string; email: string | null }>("SELECT name, email FROM customers WHERE id = $1", [customerId]);
+    if (!b || !c) return "skipped";
+    const tail = stillDue > 0n ? `${fromUnits(stillDue)} USDC is still due on this invoice.` : "This invoice is now paid in full. Nothing more to do.";
+    const res = await send(
+      "email",
+      { email: c.email, telegram_chat_id: null, whatsapp: null },
+      `Payment received: invoice ${invoiceNo}`,
+      `Hi ${c.name},\n\nThank you. ${b.name} received your payment of ${fromUnits(amount)} USDC for invoice ${invoiceNo}.\n${tail}\n\n${b.name}`,
+    );
+    return res.status + (res.error ? ` (${res.error})` : "");
+  } catch (e) {
+    return `failed (${e instanceof Error ? e.message : String(e)})`;
+  }
 }
