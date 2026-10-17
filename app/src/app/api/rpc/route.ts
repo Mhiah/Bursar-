@@ -4,7 +4,7 @@ import { chain } from "@/lib/arc";
 export const dynamic = "force-dynamic";
 
 // The browser reads the chain through this site instead of calling the Arc RPC directly,
-// which browsers can block. Only read methods pass; sending transactions stays in the user's wallet.
+// which browsers can block. Only read methods and already-signed transactions pass.
 const READS = new Set([
   "eth_chainId",
   "eth_blockNumber",
@@ -21,8 +21,9 @@ const READS = new Set([
   "eth_getTransactionCount",
 ]);
 
-// Test mode's built-in wallet signs in the browser and sends through here (local test chain only).
-if (chain.id === 31337) READS.add("eth_sendRawTransaction");
+// The wallet made on this site signs in the browser and sends through here. The transaction is
+// already signed by the owner, so relaying it gives this server no power over anyone's money.
+READS.add("eth_sendRawTransaction");
 
 const upstream = () => process.env.ARC_RPC_URL || chain.rpcUrls.default.http[0];
 

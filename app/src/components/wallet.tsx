@@ -69,7 +69,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const unlockLocal = useCallback(async (password: string) => {
     const account = await unlockLocalWallet(password);
-    const c = createWalletClient({ account, chain, transport: http() });
+    const c = createWalletClient({ account, chain, transport: http(`${window.location.origin}/api/rpc`) });
     setClient(c);
     setKind("local");
     return account.address;
