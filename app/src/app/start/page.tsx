@@ -70,6 +70,7 @@ function WalletStep() {
   const [secret, setSecret] = useState("");
   const [phrase, setPhrase] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   if (phrase)
     return (
@@ -85,6 +86,15 @@ function WalletStep() {
             </span>
           ))}
         </div>
+        <button
+          className="btn-ghost text-sm"
+          onClick={() => {
+            navigator.clipboard.writeText(phrase);
+            setCopied(true);
+          }}
+        >
+          {copied ? "Copied" : "Copy phrase"}
+        </button>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} /> I've written it down somewhere safe
         </label>
