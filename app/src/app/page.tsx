@@ -135,7 +135,7 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="border-y border-rule bg-cream">
+      <div className="hidden border-y border-rule bg-cream sm:block">
         <div className={`${wrap} flex flex-wrap gap-x-8 gap-y-2 py-4 font-mono text-xs uppercase tracking-widest text-ink`}>
           {strip.map((s, i) => (
             <span key={s} className="whitespace-nowrap">
