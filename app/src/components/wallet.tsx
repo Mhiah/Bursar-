@@ -22,7 +22,7 @@ type Ctx = {
 const WalletCtx = createContext<Ctx | null>(null);
 
 /** A transaction from the wallet made on this site, waiting for the owner to approve it. */
-type Pending = { from: Address; to: Address | null; fee: bigint; balance: bigint | null; resolve: () => void; reject: (e: Error) => void };
+type Pending = { from: Address; to: Address | null; fee: bigint; balance: bigint | null; message?: string; resolve: () => void; reject: (e: Error) => void };
 
 declare global {
   interface Window {
@@ -87,6 +87,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         );
         return unlocked.signTransaction(tx, opts);
       },
+      signMessage: async ({ message }) => {
+        const text = typeof message === "string" ? message : String((message as any).raw ?? "");
+        await new Promise<void>((resolve, reject) =>
+          setPending({ from: unlocked.address, to: null, fee: 0n, balance: null, message: text, resolve, reject }),
+        );
+        return unlocked.signMessage({ message });
+      },
     };
     const c = createWalletClient({ account, chain, transport: rpc });
     setClient(c);
@@ -122,7 +129,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const answer = (ok: boolean) => {
     if (!pending) return;
     if (ok) pending.resolve();
-    else pending.reject(new Error("You rejected the transaction."));
+    else pending.reject(new Error(pending.message != null ? "You cancelled the sign-in." : "You rejected the transaction."));
     setPending(null);
   };
 
@@ -160,6 +167,24 @@ const shortAddr = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 /** The wallet made on this site asks before it signs, the way a wallet app does. Gas on Arc is paid in USDC. */
 function ConfirmTx({ p, onAnswer }: { p: Pending; onAnswer: (ok: boolean) => void }) {
+  if (p.message != null)
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div role="dialog" aria-label="Signature request" className="w-full max-w-sm space-y-4 rounded-xl border border-rule bg-card p-5 text-sm text-ink shadow-lg">
+          <h2 className="text-base font-semibold">Signature request</h2>
+          <p className="whitespace-pre-wrap break-words rounded-lg border border-rule bg-paper p-3">{p.message}</p>
+          <p className="font-mono">{shortAddr(p.from)}</p>
+          <div className="flex gap-2">
+            <button className="btn" onClick={() => onAnswer(true)}>
+              Sign
+            </button>
+            <button className="btn-ghost" onClick={() => onAnswer(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   const short = p.balance != null && p.balance < p.fee;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
