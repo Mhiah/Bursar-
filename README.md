@@ -6,7 +6,7 @@ The agent decides; the contract has the final say. The owner's rules live in a v
 
 Built for the Tameion Agents Hackathon (Canteen x Circle x Arc), brief 04: Autonomous Business Operator.
 
-- Demo video: _link coming_
+- Demo video: https://x.com/myacxt/status/2111430594336879085
 - Live site: https://bursar.myacxt.site
 - Contracts on Arc mainnet: [BursarFactory](https://explorer.arc.io/address/0x1d872C07C1935fe5E3a28a9df0690C2caf7B5709) (every business vault created shows up in its Transactions tab)
 
