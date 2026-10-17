@@ -259,6 +259,14 @@ async function main() {
   assert.equal(attention.filter((a) => /Stopped chasing Ada about invoice INV-2/.test(a.summary)).length, 1, "the owner is told once");
   assert.ok(attention.some((a) => /INV-3 was overpaid by 2(\.00)? USDC/.test(a.summary)), "an overpayment is flagged");
 
+  // Ada pays INV-1 a second time, with nothing else open: the owner is told it's a possible duplicate.
+  await q("UPDATE payment_requests SET status = 'cancelled' WHERE customer_id = $1 AND status IN ('open','part_paid')", [cid]);
+  await tx(customer, usdc.address, usdc.abi, "transfer", [vault, usd(500)]);
+  await runBusiness(bid, async () => ({ summary: "scripted dup", stop: "end_turn" }));
+  const dupAttention = await q<{ summary: string }>("SELECT summary FROM decisions WHERE business_id = $1 AND kind = 'attention' AND summary LIKE 'Possible duplicate%'", [bid]);
+  assert.equal(dupAttention.length, 1, "a second payment of an already-paid invoice is flagged once");
+  assert.match(dupAttention[0].summary, /500(\.00)? USDC.*INV-1 is already paid/);
+
   // Decision log is intact and its head was written onchain.
   const integrity = await verifyLog(bid);
   assert.ok(integrity.ok, "decision log hashes check out");

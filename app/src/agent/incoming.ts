@@ -46,6 +46,7 @@ export async function syncIncoming(b: Business) {
       });
     }
     await autoMatch(b, p);
+    await flagDuplicate(b, p);
   }
   return found.length;
 }
@@ -65,6 +66,32 @@ async function autoMatch(b: Business, p: { id: string; from: Address; amount: bi
   const candidates = byWallet.filter(fits).length === 1 ? byWallet.filter(fits) : open.filter(fits);
   if (candidates.length !== 1) return; // left for the agent to decide
   await applyPayment(b.id, p.id, candidates[0].id, "Only one open request matches this amount" + (byWallet.length ? " from this customer's wallet." : "."));
+}
+
+/** A payment that matched nothing, from a customer who already paid an invoice of exactly this amount in full: log it for the owner. Nothing is refunded automatically. */
+async function flagDuplicate(b: Business, p: { id: string; from: Address; amount: bigint }) {
+  const unmatched = await one<{ request_id: string | null }>("SELECT request_id FROM payments_in WHERE id = $1", [p.id]);
+  if (!unmatched || unmatched.request_id) return;
+  const paid = await q<{ invoice_no: string; customer_id: string }>(
+    `SELECT r.invoice_no, r.customer_id FROM payment_requests r JOIN customers c ON c.id = r.customer_id
+     WHERE r.business_id = $1 AND r.status = 'paid' AND r.amount = $2 AND lower(c.wallet_address) = lower($3)
+     ORDER BY r.paid_at DESC NULLS LAST LIMIT 1`,
+    [b.id, p.amount.toString(), p.from],
+  );
+  if (!paid.length) return;
+  const stillOwes = await q(
+    `SELECT 1 FROM payment_requests WHERE business_id = $1 AND customer_id = $2 AND status IN ('open','part_paid') LIMIT 1`,
+    [b.id, paid[0].customer_id],
+  );
+  if (stillOwes.length) return; // they may simply be paying another invoice; leave it to the agent
+  const amt = fromUnits(p.amount);
+  await logDecision(
+    b.id,
+    "attention",
+    `Possible duplicate: ${amt} USDC from ${p.from}, invoice ${paid[0].invoice_no} is already paid`,
+    `This customer already paid invoice ${paid[0].invoice_no} in full for the same amount and has nothing else open. The ${amt} USDC is in the vault and not matched to any invoice. Decide whether to send it back or keep it as credit.`,
+    { paymentId: p.id, invoice: paid[0].invoice_no },
+  );
 }
 
 /** Record that a received payment settles (part of) a request. */
