@@ -324,7 +324,7 @@ function VaultStep({ onDone }: { onDone: () => void }) {
         onClick={() =>
           run(async () => {
             // After a page reload the wallet connection is gone; this reconnects it.
-            setStatus("Confirm the transaction in your wallet…");
+            setStatus(w.kind === "local" ? "Check the details and sign the transaction…" : "Confirm the transaction in your wallet…");
             const client = await w.ensureClient();
             const hash = await client.writeContract({
               address: FACTORY,
