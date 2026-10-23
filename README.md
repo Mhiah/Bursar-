@@ -143,11 +143,13 @@ Before money moves, every wallet is checked by calling `isBlacklisted` on the US
 
 ## Traction on Arc mainnet
 
-- **Business 1, the founder's own business:** a real customer paid a real invoice (INV-2, 3 USDC) into the vault on Arc mainnet, and the agent matched it by itself. The agent also sent a real reminder email before that.
-- **Business 2, Nitro** ([@nitro.ng](https://www.instagram.com/nitro.ng), an online marketing agency for creators): created its own vault on Arc mainnet (visible in the factory's transactions). Nitro reported adding its first customer and a 6 USDC invoice, and later reported that Bursar runs smoothly and it plans to keep using it.
-- **Business 3, an online jewellery and watches seller** on WhatsApp and X: reported creating its vault and being ready to use it.
-- **Business 4, Kicks Store, a footwear seller:** reported creating its vault, then creating its first invoice and sending it to a customer.
-- **Business 5, a local business I onboarded in person:** I'm teaching them USDC and Arc before they start using Bursar.
+| # | Business | What's happened on Arc mainnet |
+|---|---|---|
+| 1 | My own business | A real customer paid a real invoice (INV-2, 3 USDC); the agent matched it and sent a reminder email before that |
+| 2 | Nitro ([@nitro.ng](https://www.instagram.com/nitro.ng)), marketing agency for creators | Created its vault; reported a first customer, a 6 USDC invoice and smooth use |
+| 3 | Jewellery and watches seller | Reported creating its vault, ready to use |
+| 4 | Kicks Store, footwear seller | Reported creating its vault and sending its first invoice |
+| 5 | Local business onboarded in person | Learning USDC and Arc before starting |
 
 All businesses share the one Bursar agent wallet, and each has its own vault and rules.
 
