@@ -102,7 +102,7 @@ All rule changes go in one owner transaction (Multicall).
 | BursarFactory | `0x1d872C07C1935fe5E3a28a9df0690C2caf7B5709` |
 | BursarSavingsFactory | `0xe7395461185d3d8964dDaA29B31b963Cfb96CB1c` |
 
-## How we used Circle's tools, in detail
+## How I used Circle's tools, in detail
 
 **1. Circle Agent Wallet, through the Circle CLI** (`app/src/agent/wallet.ts`)
 The agent has no private key on the server. Its wallet is a Circle Agent Wallet, logged in once with `npx circle wallet login <email> --type agent`. Every agent transaction (`agentPay`, `requestApproval`, `moveToReserve`, `recordDecision`) goes through the bundled CLI as `circle wallet execute "<function signature>" <params> --contract <vault> --address <agent> --chain ARC --output json`, and Bursar reads the transaction hash from the JSON. On Railway, the CLI's login lives on the persistent volume (`CIRCLE_CLI_HOME=/data/circle`), so it survives redeploys. If the login expires, the app shows "logged out" with the command to fix it.
@@ -144,8 +144,10 @@ Before money moves, every wallet is checked by calling `isBlacklisted` on the US
 ## Traction on Arc mainnet
 
 - **Business 1, the founder's own business:** a real customer paid a real invoice (INV-2, 3 USDC) into the vault on Arc mainnet, and the agent matched it by itself. The agent also sent a real reminder email before that.
-- **Business 2, Nitro** ([@nitro.ng](https://www.instagram.com/nitro.ng), an online marketing agency for creators): created its own vault on Arc mainnet (visible in the factory's transactions). Nitro reported adding its first customer and a 6 USDC invoice.
-- **Business 3, an online jewellery and watches seller** on WhatsApp and X: onboarded, no usage yet.
+- **Business 2, Nitro** ([@nitro.ng](https://www.instagram.com/nitro.ng), an online marketing agency for creators): created its own vault on Arc mainnet (visible in the factory's transactions). Nitro reported adding its first customer and a 6 USDC invoice, and later reported that Bursar runs smoothly and it plans to keep using it.
+- **Business 3, an online jewellery and watches seller** on WhatsApp and X: reported creating its vault and being ready to use it.
+- **Business 4, Kicks Store, a footwear seller:** reported creating its vault, then creating its first invoice and sending it to a customer.
+- **Business 5, a local business I onboarded in person:** I'm teaching them USDC and Arc before they start using Bursar.
 
 All businesses share the one Bursar agent wallet, and each has its own vault and rules.
 
@@ -155,6 +157,7 @@ There are two kinds of wallet, and they do different jobs:
 
 - **The agent wallet** is Bursar's own running wallet, a Circle Agent Wallet. It pays for the AI calls and the small fees the agent needs, and Bursar's operator keeps it topped up. It never holds a business's money.
 - **Each business's vault** holds that business's money and nothing else. A business only needs to create a vault (a small one-off fee of about 0.05 USDC) and fund it. The vault's rules are the owner's, and the agent can act on it only inside them.
+- **The owner's wallet** owns the vault. It can be MetaMask or another browser wallet, or a wallet made right on the site. A site-made wallet is a real EVM wallet with a 12-word recovery phrase (with a Copy phrase button, and the same phrase works in MetaMask), and its key stays encrypted in the owner's browser. For a site-made wallet, Bursar shows its own Confirm transaction box (fee, balance, Sign and send or Reject) before every on-chain action, and a Signature request box before the free sign-in.
 
 Both rules above can be changed later on the Rules & settings page.
 
