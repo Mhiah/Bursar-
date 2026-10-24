@@ -6,10 +6,6 @@ const nextConfig = {
   // Server-only packages that should not be bundled.
   // (The agent's timer starts with the server from src/instrumentation.ts.)
   serverExternalPackages: ["pg", "@electric-sql/pglite"],
-  // A short link to the whitepaper PDF.
-  async redirects() {
-    return [{ source: "/whitepaper", destination: "/bursar-whitepaper.pdf", permanent: false }];
-  },
 };
 
 export default nextConfig;
