@@ -1,3 +1,4 @@
+require("./scripts/dns-fallback");
 require("@nomicfoundation/hardhat-ethers");
 require("@nomicfoundation/hardhat-chai-matchers");
 const path = require("path");

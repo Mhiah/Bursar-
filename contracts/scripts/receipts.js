@@ -22,7 +22,6 @@
  * With no network flag it runs against Hardhat's in-process chain and, if no FACTORY is
  * given, first makes a few test events so the output can be checked offline: `npm run receipts:selftest`.
  */
-require("./dns-fallback");
 const { ethers, network } = require("hardhat");
 
 const MAINNET_FACTORY = "0x1d872C07C1935fe5E3a28a9df0690C2caf7B5709";
