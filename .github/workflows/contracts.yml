@@ -1,0 +1,28 @@
+name: Contracts
+
+# Runs the vault's tests and the canonical demo. The demo asserts every outcome in the
+# README's table, so the README and the contract can't drift apart without this going red.
+on:
+  push:
+  pull_request:
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: contracts/package-lock.json
+      - run: npm ci
+      - name: Contract tests
+        run: npm test
+      - name: Canonical demo (asserts every outcome in the README table)
+        run: npm run demo
+      - name: Receipts script self-test (local chain)
+        run: npm run receipts:selftest > /dev/null

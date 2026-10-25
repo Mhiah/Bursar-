@@ -11,6 +11,67 @@ Built for the Tameion Agents Hackathon (Canteen x Circle x Arc), brief 04: Auton
 - Whitepaper: https://bursar.myacxt.site/whitepaper
 - Contracts on Arc mainnet: [BursarFactory](https://explorer.arc.io/address/0x1d872C07C1935fe5E3a28a9df0690C2caf7B5709) (every business vault created shows up in its Transactions tab)
 
+## The one rule
+
+> **An AI agent may move a business's money only inside rules the owner wrote onchain. Anything bigger becomes one exact request the owner approves once, and the rules never move.**
+
+- **For owners:** *One approval. The limit didn't move.*
+- **For engineers:** *The model is not the guard. The vault is.*
+
+## See it in a minute
+
+[![Contracts](https://github.com/Mhiah/Bursar-/actions/workflows/contracts.yml/badge.svg)](https://github.com/Mhiah/Bursar-/actions/workflows/contracts.yml)
+
+```bash
+cd contracts && npm ci && npm run demo
+```
+
+This runs the real `BursarVault` on a local test chain (no Arc, no real money) and asserts every outcome below. If the contract ever behaves differently, the script fails, and CI runs it on every push.
+
+| # | Who | Action | Result | Why |
+| --- | --- | --- | --- | --- |
+| 1 | agent | Pay Acme $80 (limit $100) | **ALLOW** | Paid, no approval asked |
+| 2 | agent | Pay Acme $250 | **REFUSE** | `OverPaymentLimit` |
+| 3 | agent | Ask the owner to approve exactly $250 to Acme | **PENDING** | `ApprovalRequested` #0, nothing paid yet |
+| 4 | owner | Approve request #0 | **ALLOW** | Paid $250. The $100 limit is the same before and after |
+| 5 | agent | Pay the same bill again | **REFUSE** | `AlreadyPaid` |
+| 6 | owner | Approve request #0 a second time | **REFUSE** | `NotOpen`: one approval, one use |
+| 7 | agent | Pay an unapproved wallet $5 | **REFUSE** | `PayeeNotApproved` |
+| 8 | agent | Pay Acme $30 (suppliers budget $300, $330 already spent) | **REFUSE** | `OverBudget`: the approved $250 still counted |
+| 9 | owner | Pause the agent | OK | |
+| 10 | agent | Pay Acme $1 | **REFUSE** | `IsPaused` |
+
+## Why not just a spending limit?
+
+Spending limits already exist: multisig wallets with allowance modules (Safe has one) and smart-wallet session keys cap how much a key may spend. They answer "how much?". A business also needs "to whom, for what, and only once". Bursar's vault adds:
+
+- a payee list only the owner can change,
+- a monthly budget per category,
+- a cash floor and a reserve the agent can never spend,
+- one payment per bill reference,
+- an exception that is one exact payment, used once, which never raises the limit,
+- a pause switch and a way to replace the agent's key,
+
+and it is built around invoices and bills, not generic transfers. Who enforces what, including the checks that live on the server and not in the contract, is in [docs/WHO-ENFORCES-WHAT.md](docs/WHO-ENFORCES-WHAT.md).
+
+## What's real, with receipts
+
+| Claim | Evidence |
+| --- | --- |
+| The vault refuses everything outside the owner's rules | `npm run demo` (10 asserted outcomes) and `npm test` in `contracts/` (33 tests: 23 for the vault, 10 for savings) |
+| Contracts are live on Arc mainnet | [BursarFactory](https://explorer.arc.io/address/0x1d872C07C1935fe5E3a28a9df0690C2caf7B5709), [BursarSavingsFactory](https://explorer.arc.io/address/0xe7395461185d3d8964dDaA29B31b963Cfb96CB1c) |
+| A real customer paid a real invoice on mainnet, and the agent matched it | Transactions below |
+| The agent paid inside the rules, asked for approval, and the owner approved | Transactions below |
+| The decision log is anchored onchain | `Decision` transactions below |
+
+### Receipts
+
+Generated from the chain by `cd contracts && npm run receipts` (read-only, no key needed). Add `FROM_BLOCK=<block>` to start later.
+
+<!-- RECEIPTS:START -->
+_Not generated yet. Run `npm run receipts` and paste its output between these markers._
+<!-- RECEIPTS:END -->
+
 ## The problem
 
 A small business owner is also the bookkeeper, the debt collector and the treasurer. Invoices go unchased, bills get paid late or twice, and cash sits idle. An AI agent could do this work, but handing an agent the keys to a business's money is reckless: a model can misread an invoice, pay the wrong wallet, retry and pay twice, or be tricked by a fake bill.
@@ -204,6 +265,7 @@ What goes in `.env.local`:
 
 ```bash
 cd contracts && npm test                  # contract tests
+cd contracts && npm run demo              # the 10-step canonical demo, every outcome asserted
 npx hardhat node                          # then, in another terminal:
 cd app && npm run test:e2e                # end-to-end
 ```
@@ -226,6 +288,17 @@ The reusable parts (the vault contracts, the Circle Agent Wallet signer, the wal
 ## Licence
 
 MIT. See [LICENSE](LICENSE). Fork it, change it, ship on top of it.
+
+## Not claimed
+
+- **Not independently audited.** The contracts are small (`BursarVault.sol` is under 300 lines) and well tested, but no third party has reviewed them. They hold real USDC on mainnet, so keep balances small.
+- **Not trustless end to end.** The vault enforces the money rules. Wallet screening, duplicate-invoice flags, payment matching, reminders and the books run on the server. [Who enforces what](docs/WHO-ENFORCES-WHAT.md) lists each.
+- **One shared agent wallet** serves every business's vault. Each vault's own rules still bound it, but a compromised agent key could act inside every vault's limits until its owner pauses or replaces it.
+- **One payment per bill reference, not per real invoice.** The vault refuses a repeated reference; a resend under a different invoice number is caught by the server's duplicate flags, not the contract.
+- **The decision log is tamper-evident, not tamper-proof.** The vault stores nothing about the anchored hash.
+- **Incoming payments trust the pay link.** A customer pays the address the page shows.
+- **Traction is self-reported and small.** The businesses above told us what they did, in test-sized amounts. See the Receipts for what is verifiable onchain.
+- **Not a bank, no deposit insurance, no tax or filing.**
 
 ## Limits
 
