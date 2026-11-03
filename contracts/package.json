@@ -12,7 +12,10 @@
     "deploy:savings:mainnet": "hardhat run scripts/deploy-savings.js --network arcMainnet",
     "deploy:savings:testnet": "hardhat run scripts/deploy-savings.js --network arcTestnet",
     "cost:mainnet": "hardhat run scripts/deploy-all.js --network arcMainnet",
-    "deploy:all:mainnet": "hardhat run scripts/deploy-all-go.js --network arcMainnet"
+    "deploy:all:mainnet": "hardhat run scripts/deploy-all-go.js --network arcMainnet",
+    "demo": "hardhat run scripts/canonical-demo.js",
+    "receipts": "hardhat run scripts/receipts.js --network arcMainnet",
+    "receipts:selftest": "hardhat run scripts/receipts.js"
   },
   "keywords": [],
   "author": "",
