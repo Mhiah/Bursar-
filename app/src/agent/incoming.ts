@@ -95,6 +95,8 @@ async function handle(b: Business, p: Payment) {
 
   const already = await one<{ request_id: string | null }>("SELECT request_id FROM payments_in WHERE id = $1", [p.id]);
   if (already?.request_id) return true; // matched already (by the owner, or before a restart)
+  // The owner topping up their own vault (or test USDC minted in test mode) isn't a customer payment.
+  if (p.from_address.toLowerCase() === b.owner_address.toLowerCase() || BigInt(p.from_address) === 0n) return true;
 
   if (s.status === "blocked") {
     await needsYou(b.id, p, `The wallet that sent it failed the wallet check, so it wasn't matched to any invoice.`);
