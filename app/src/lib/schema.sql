@@ -146,7 +146,8 @@ CREATE TABLE IF NOT EXISTS savings_moves (
   source TEXT NOT NULL,
   -- The customer payment a "save when paid" move came from; stops saving the same payment twice.
   payment_id TEXT UNIQUE REFERENCES payments_in(id),
-  -- pending (owner sent money, waiting to go into its pot) | done | failed
+  -- retry (Save when paid, waiting to be sent or retried) | sending (sent to the vault, result not known yet)
+  -- | pending (in savings, waiting to go into its pot) | allocating | done | failed (gave up; the owner was told)
   status TEXT NOT NULL DEFAULT 'done',
   tx_hash TEXT,
   error TEXT,
@@ -174,3 +175,32 @@ CREATE TABLE IF NOT EXISTS used_nonces (
   nonce TEXT PRIMARY KEY,
   used_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Incoming payments are found first and handled after, so a restart in between can't lose one.
+-- Rows that existed before this column was added were already handled.
+ALTER TABLE payments_in ADD COLUMN IF NOT EXISTS processed_at TIMESTAMPTZ DEFAULT now();
+ALTER TABLE payments_in ALTER COLUMN processed_at DROP DEFAULT;
+-- Only one run handles a payment at a time.
+ALTER TABLE payments_in ADD COLUMN IF NOT EXISTS processing_until TIMESTAMPTZ;
+-- What a match did, and when the owner and customer were told about it.
+ALTER TABLE payments_in ADD COLUMN IF NOT EXISTS match_info JSONB;
+ALTER TABLE payments_in ADD COLUMN IF NOT EXISTS match_told_at TIMESTAMPTZ DEFAULT now();
+ALTER TABLE payments_in ALTER COLUMN match_told_at DROP DEFAULT;
+CREATE INDEX IF NOT EXISTS idx_payments_in_todo ON payments_in (business_id) WHERE processed_at IS NULL;
+
+-- The pay page says which invoice a transaction paid: the invoice reference for a plain USDC transfer.
+CREATE TABLE IF NOT EXISTS pay_claims (
+  tx_hash TEXT NOT NULL,
+  request_id TEXT NOT NULL REFERENCES payment_requests(id),
+  -- Who signed the transaction.
+  sender TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (tx_hash, request_id)
+);
+
+-- Savings moves that can be retried: try count, when to try next, the onchain reference, last change.
+ALTER TABLE savings_moves ADD COLUMN IF NOT EXISTS attempts INT NOT NULL DEFAULT 0;
+ALTER TABLE savings_moves ADD COLUMN IF NOT EXISTS next_try_at TIMESTAMPTZ;
+ALTER TABLE savings_moves ADD COLUMN IF NOT EXISTS ref TEXT;
+ALTER TABLE savings_moves ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+ALTER TABLE savings_moves ADD COLUMN IF NOT EXISTS flagged_at TIMESTAMPTZ;

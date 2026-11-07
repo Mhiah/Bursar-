@@ -1,4 +1,6 @@
-import { handler, HttpError } from "@/lib/api";
+import { z } from "zod";
+import { body, handler, HttpError } from "@/lib/api";
+import { claimPayment } from "@/agent/incoming";
 import { one } from "@/lib/db";
 import { fromUnits } from "@/lib/money";
 
@@ -30,4 +32,13 @@ export const GET = handler(async (_req: Request, { params }: { params: Promise<{
     payTo: r.vault_address,
     nextInstalment: next && r.status !== "paid" ? { amount: fromUnits(next.amount), dueDate: next.due_date } : null,
   };
+});
+
+/** Public: the pay page reports the transaction it just sent, so the payment is matched to this invoice. */
+export const POST = handler(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
+  const { txHash } = await body(req, z.object({ txHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/) }));
+  const res = await claimPayment(id, txHash as `0x${string}`);
+  if (!res.ok) throw new HttpError(400, res.error!);
+  return { ok: true };
 });

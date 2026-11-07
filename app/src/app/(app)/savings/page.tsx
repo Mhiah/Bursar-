@@ -195,7 +195,13 @@ function SavingsAccount({
                 <span className="text-ink">{{ paid: "Save when paid", owner: "You" }[m.source as string] ?? m.source}</span>
               </span>
               <span className={`text-xs ${m.status === "failed" ? "text-bad" : "text-ink"}`}>
-                {m.status === "failed" ? "Didn't go through" : m.status === "pending" ? "Arriving" : new Date(m.created_at).toLocaleDateString()}
+                {m.status === "failed"
+                  ? "Didn't go through"
+                  : m.status === "retry"
+                    ? "Will try again"
+                    : m.status === "pending" || m.status === "sending" || m.status === "allocating"
+                      ? "Arriving"
+                      : new Date(m.created_at).toLocaleDateString()}
               </span>
             </li>
           ))}

@@ -231,7 +231,7 @@ How to decide:
 - Surplus beyond the next ${settings.operatingDays} days of bills (and money expected in that might not arrive) can move to reserve. Move round amounts, and don't shuffle money back and forth in the same run.
 - After ${MAX_REMINDERS} reminders on an invoice, chasing stops and the owner is told (chasing_stopped); don't chase those.
 - Chase every overdue invoice, whatever its size: a reminder costs nothing, and low cash is a reason to chase, not to give up. Never write off a debt or tell the owner to; that's the owner's call. Go in order of size and risk. Use the payment history: be warm with reliable and new customers (no paid invoices yet means new, not risky), firm with repeat late payers. Don't chase invoices that aren't due yet unless due within 2 days. Offer instalments to customers who are well overdue or have been chased several times, within the owner's limits.
-- Match unmatched payments only when you're confident; otherwise leave them.
+- Match an unmatched payment only when it came from that invoice's customer's known wallet; anything else is already with the owner, so leave it.
 - Every action needs a reason the owner would understand. If nothing needs doing, call note once to say so and why.
 Be decisive and brief. Finish with one or two sentences summarising what you did.`;
 

@@ -7,7 +7,7 @@ import { publicClient } from "@/lib/chain";
 import { one } from "@/lib/db";
 import { MOCK, MOCK_CUSTOMER_KEY, MOCK_MINTER_KEY } from "@/lib/mock";
 import type { Business } from "@/lib/session";
-import { syncIncoming } from "@/agent/incoming";
+import { claimPayment, syncIncoming } from "@/agent/incoming";
 
 const usdc = parseAbi(["function mint(address to, uint256 amount)", "function transfer(address to, uint256 amount) returns (bool)"]);
 
@@ -27,7 +27,8 @@ export const POST = handler(async (req: Request, { params }: { params: Promise<{
   await publicClient.waitForTransactionReceipt({ hash: await minter.writeContract({ address: USDC, abi: usdc, functionName: "mint", args: [customer.account.address, units] }) });
   const hash = await customer.writeContract({ address: USDC, abi: usdc, functionName: "transfer", args: [getAddress(b.vault_address) as Address, units] });
   await publicClient.waitForTransactionReceipt({ hash });
-  // Pick it up now, as the agent would on its next run.
+  // Report it the way the real pay page does, then pick up anything else, as the agent would on its next run.
+  await claimPayment(id, hash);
   await syncIncoming(b);
   return { txHash: hash };
 });

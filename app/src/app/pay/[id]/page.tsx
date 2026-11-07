@@ -68,6 +68,19 @@ export default function Pay({ params }: { params: Promise<{ id: string }> }) {
     return (Math.ceil((Number(amount) / rate) * 1.005 * 100) / 100).toFixed(2);
   };
 
+  // Tell the business which invoice this transaction paid, so it is matched to this invoice and no other.
+  // A few tries, in case the server's view of the chain is a moment behind the wallet's.
+  const report = async (hash: string) => {
+    for (let i = 0; i < 4; i++) {
+      try {
+        await api(`/api/pay/${id}`, { method: "POST", json: { txHash: hash } });
+        return;
+      } catch {
+        await new Promise((r) => setTimeout(r, 4000));
+      }
+    }
+  };
+
   const pay = () =>
     act.run(async () => {
       if (!account || !d?.payTo) return;
@@ -78,12 +91,14 @@ export default function Pay({ params }: { params: Promise<{ id: string }> }) {
         const hash = await wallet.writeContract({ address: USDC, abi: erc20, functionName: "transfer", args: [to, parseUnits(amount, 6)] });
         await browserPublicClient.waitForTransactionReceipt({ hash });
         setSent({ hash, note: "Payment sent." });
+        void report(hash);
       } else if (method === "eurc") {
         await switchToArc(window.ethereum);
         const { kit, adapter } = await kitAdapter();
         const amountIn = await eurcNeeded();
         const res: any = await kit.swap({ from: { adapter, chain: appKitChain as any }, tokenIn: "EURC", tokenOut: "USDC", amountIn, to: { recipientAddress: to } });
         setSent({ hash: res?.txHash, note: `Swapped ${amountIn} EURC for USDC and sent it.` });
+        if (res?.txHash) void report(res.txHash);
       } else {
         const { kit, adapter } = await kitAdapter();
         const res: any = await kit.bridge({

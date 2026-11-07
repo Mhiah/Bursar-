@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { createPublicClient, createWalletClient, encodeFunctionData, http, parseUnits, type Address, type Hex } from "viem";
+import { createPublicClient, createWalletClient, encodeFunctionData, http, keccak256, parseUnits, toHex, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat } from "viem/chains";
 
@@ -124,7 +124,9 @@ async function main() {
   await q("INSERT INTO payment_requests (id, business_id, customer_id, invoice_no, amount, due_date) VALUES ($1,$2,$3,$4,$5,$6)", [
     late, bid, cid, "INV-2", usd(300).toString(), "2026-01-15",
   ]);
-  await tx(customer, usdc.address, usdc.abi, "transfer", [vault, usd(500)]);
+  const paid1 = await tx(customer, usdc.address, usdc.abi, "transfer", [vault, usd(500)]);
+  // The pay page reports which invoice this transaction paid: the invoice reference.
+  await q("INSERT INTO pay_claims (tx_hash, request_id, sender) VALUES ($1,$2,$3)", [paid1.transactionHash, rid, customer.address]);
 
   // ---------------------------------------------------------------- supplier bills
   const sid = newId();
@@ -266,6 +268,82 @@ async function main() {
   const dupAttention = await q<{ summary: string }>("SELECT summary FROM decisions WHERE business_id = $1 AND kind = 'attention' AND summary LIKE 'Possible duplicate%'", [bid]);
   assert.equal(dupAttention.length, 1, "a second payment of an already-paid invoice is flagged once");
   assert.match(dupAttention[0].summary, /500(\.00)? USDC.*INV-1 is already paid/);
+
+  // ---------------------------------------------------------------- matching: an amount alone never decides
+  const { processPayments, claimPayment, applyPayment } = await import("../src/agent/incoming");
+  const { runSavings } = await import("../src/agent/savings");
+  const biz = async () => (await one<any>("SELECT * FROM businesses WHERE id = $1", [bid]))!;
+  const stranger = privateKeyToAccount(KEYS[3]); // a wallet no customer has paid from
+  await tx(deployer, usdc.address, usdc.abi, "mint", [stranger.address, usd(1_000)]);
+  const bob = newId();
+  await q("INSERT INTO customers (id, business_id, name) VALUES ($1,$2,'Bob')", [bob, bid]);
+  const bobInv = newId();
+  await q("INSERT INTO payment_requests (id, business_id, customer_id, invoice_no, amount, due_date) VALUES ($1,$2,$3,'INV-B1',$4,'2026-12-01')", [
+    bobInv, bid, bob, usd(200).toString(),
+  ]);
+  const strangerPay = await tx(stranger, usdc.address, usdc.abi, "transfer", [vault, usd(200)]);
+  const { syncIncoming } = await import("../src/agent/incoming");
+  await syncIncoming(await biz());
+  const sp = (await one<any>("SELECT * FROM payments_in WHERE tx_hash = $1", [strangerPay.transactionHash]))!;
+  assert.equal(sp.request_id, null, "the only invoice for this amount is not matched on amount alone");
+  assert.equal(sp.processed_at, null, "it waits a little for the pay page's invoice reference");
+  // The agent can't match it either.
+  assert.match(await applyPayment(bid, sp.id, bobInv, "Same amount."), /Leave it for the owner/);
+  // Ten minutes on, still no reference: the owner is asked.
+  await q("UPDATE payments_in SET created_at = now() - interval '11 minutes' WHERE id = $1", [sp.id]);
+  await processPayments(await biz());
+  const needs = await q<{ summary: string }>("SELECT summary FROM decisions WHERE business_id = $1 AND kind = 'attention' AND data->>'paymentId' = $2", [bid, sp.id]);
+  assert.equal(needs.length, 1);
+  assert.match(needs[0].summary, /Couldn't tell which invoice 200(\.00)? USDC/);
+  await q("UPDATE payments_in SET created_at = now() WHERE id = $1", [sp.id]);
+  // Then the pay page's reference arrives: now it is certain.
+  assert.deepEqual(await claimPayment(bobInv, strangerPay.transactionHash), { ok: true });
+  assert.equal((await one("SELECT status FROM payment_requests WHERE id = $1", [bobInv]))!.status, "paid", "matched by the invoice reference");
+  // A reference for a transaction that didn't pay this business is refused.
+  const elsewhere = await tx(stranger, usdc.address, usdc.abi, "transfer", [deployer.address, 1n]);
+  assert.equal((await claimPayment(bobInv, elsewhere.transactionHash)).ok, false);
+
+  // ---------------------------------------------------------------- matching: one payment counts once, even when two matches race
+  const inv5a = newId();
+  const inv5b = newId();
+  for (const [id, no] of [[inv5a, "INV-B2"], [inv5b, "INV-B3"]])
+    await q("INSERT INTO payment_requests (id, business_id, customer_id, invoice_no, amount, due_date) VALUES ($1,$2,$3,$4,$5,'2026-12-01')", [id, bid, bob, no, usd(5).toString()]);
+  const five = await tx(stranger, usdc.address, usdc.abi, "transfer", [vault, usd(5)]);
+  await syncIncoming(await biz());
+  const fp = (await one<any>("SELECT id, request_id FROM payments_in WHERE tx_hash = $1", [five.transactionHash]))!;
+  assert.equal(fp.request_id, null, "two open invoices of this amount: not matched");
+  const both = await Promise.all([applyPayment(bid, fp.id, inv5a, "x", "owner"), applyPayment(bid, fp.id, inv5b, "x", "owner")]);
+  assert.equal(both.filter((m) => m.startsWith("Matched")).length, 1, "only one match wins");
+  const sums = await q<{ paid_amount: string }>("SELECT paid_amount FROM payment_requests WHERE id IN ($1,$2)", [inv5a, inv5b]);
+  assert.equal(sums.reduce((a, r) => a + BigInt(r.paid_amount), 0n), usd(5), "the 5 USDC is credited once");
+
+  // ---------------------------------------------------------------- savings: a failed move is retried, a cut-off one is finished once
+  // Bob's 200 is matched; 10% is 20, but only 10 of the 60 savings budget is left: it waits and retries.
+  await runSavings(await biz(), vault);
+  const retry = (await one<any>("SELECT * FROM savings_moves WHERE payment_id = $1", [sp.id]))!;
+  assert.equal(retry.status, "retry");
+  assert.equal(retry.error, "OverBudget");
+  assert.equal(retry.attempts, 1);
+  // The owner raises the budget; when the wait is over it goes through.
+  await tx(owner, vault, bursarVaultAbi, "setBudget", [categoryKey("savings"), usd(200)]);
+  await q("UPDATE savings_moves SET next_try_at = now() WHERE id = $1", [retry.id]);
+  await runSavings(await biz(), vault);
+  assert.equal((await one<any>("SELECT status FROM savings_moves WHERE id = $1", [retry.id]))!.status, "done", "the retried save went through");
+  // A run is cut off right after the vault paid savings: the next run sees the vault's record and finishes it, without paying again.
+  const extra = await tx(customer, usdc.address, usdc.abi, "transfer", [vault, usd(30)]);
+  await syncIncoming(await biz());
+  const ep = (await one<any>("SELECT id FROM payments_in WHERE tx_hash = $1", [extra.transactionHash]))!;
+  const ref = keccak256(toHex(`paid:${ep.id}`));
+  await q("INSERT INTO savings_moves (id, business_id, pot, amount, source, payment_id, status, ref, updated_at) VALUES ($1,$2,0,$3,'paid',$4,'sending',$5, now() - interval '1 hour')", [
+    newId(), bid, usd(3).toString(), ep.id, ref,
+  ]);
+  await tx(agent, vault, bursarVaultAbi, "agentPay", [savings, usd(3), categoryKey("savings"), ref]);
+  const potBefore = ((await pub.readContract({ address: savings, abi: bursarSavingsAbi, functionName: "pot", args: [0n] })) as any).balance;
+  const vaultBefore = await pub.readContract({ address: usdc.address, abi: usdc.abi, functionName: "balanceOf", args: [vault] });
+  await runSavings(await biz(), vault);
+  assert.equal((await one<any>("SELECT status FROM savings_moves WHERE payment_id = $1", [ep.id]))!.status, "done");
+  assert.equal(((await pub.readContract({ address: savings, abi: bursarSavingsAbi, functionName: "pot", args: [0n] })) as any).balance, potBefore + usd(3));
+  assert.equal(await pub.readContract({ address: usdc.address, abi: usdc.abi, functionName: "balanceOf", args: [vault] }), vaultBefore, "not paid a second time");
 
   // Decision log is intact and its head was written onchain.
   const integrity = await verifyLog(bid);

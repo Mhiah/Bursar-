@@ -20,5 +20,5 @@ export const PATCH = handler(async (req: Request, { params }: { params: Promise<
     if (!rows.length) throw new HttpError(404, "No open request with that id.");
     return { ok: true };
   }
-  return { result: await applyPayment(b.id, input.payment_id, id, "Matched by you.") };
+  return { result: await applyPayment(b.id, input.payment_id, id, "Matched by you.", "owner") };
 });

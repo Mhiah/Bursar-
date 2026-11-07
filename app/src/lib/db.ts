@@ -5,7 +5,17 @@ import { randomUUID } from "node:crypto";
 type Row = Record<string, any>;
 interface Driver {
   query<T extends Row = Row>(sql: string, params?: unknown[]): Promise<T[]>;
+  transaction<R>(fn: (t: Tx) => Promise<R>): Promise<R>;
 }
+/** Queries inside one database transaction. */
+export interface Tx {
+  q<T extends Row = Row>(sql: string, params?: unknown[]): Promise<T[]>;
+  one<T extends Row = Row>(sql: string, params?: unknown[]): Promise<T | undefined>;
+}
+const txOf = (query: <T extends Row>(sql: string, params?: unknown[]) => Promise<T[]>): Tx => ({
+  q: query,
+  one: async (sql, params) => (await query<any>(sql, params))[0],
+});
 
 const g = globalThis as unknown as { __bursarDb?: Promise<Driver> };
 
@@ -20,7 +30,23 @@ async function open(): Promise<Driver> {
     types.setTypeParser(1082, (v: string) => v);
     const pool = new Pool({ connectionString: process.env.DATABASE_URL });
     await pool.query(schema);
-    return { query: async (sql, params) => (await pool.query(sql, params as any[])).rows };
+    return {
+      query: async (sql, params) => (await pool.query(sql, params as any[])).rows,
+      transaction: async (fn) => {
+        const client = await pool.connect();
+        try {
+          await client.query("BEGIN");
+          const out = await fn(txOf(async (sql, params) => (await client.query(sql, params as any[])).rows));
+          await client.query("COMMIT");
+          return out;
+        } catch (e) {
+          await client.query("ROLLBACK").catch(() => {});
+          throw e;
+        } finally {
+          client.release();
+        }
+      },
+    };
   }
 
   // Local file database, for running on one machine without Postgres.
@@ -34,6 +60,12 @@ async function open(): Promise<Driver> {
       const res = await db.query<T>(sql, params as any[]);
       return res.rows.map((r) => normalise(r as Row)) as T[];
     },
+    // PGlite has one connection: other queries wait until the transaction ends,
+    // so code inside it must only use the Tx it is given.
+    transaction: (fn) =>
+      db.transaction((t) =>
+        fn(txOf(async <T extends Row>(sql: string, params?: unknown[]) => (await t.query<T>(sql, params as any[])).rows.map((r) => normalise(r as Row)) as T[])),
+      ) as Promise<any>,
   };
 }
 
@@ -54,6 +86,11 @@ export async function q<T extends Row = Row>(sql: string, params: unknown[] = []
 
 export async function one<T extends Row = Row>(sql: string, params: unknown[] = []): Promise<T | undefined> {
   return (await q<T>(sql, params))[0];
+}
+
+/** Run fn in one transaction: everything in it is saved together, or nothing is. */
+export async function transaction<R>(fn: (t: Tx) => Promise<R>): Promise<R> {
+  return (await driver()).transaction(fn);
 }
 
 export const newId = () => randomUUID();
