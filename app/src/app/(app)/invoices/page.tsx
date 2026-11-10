@@ -9,6 +9,9 @@ export default function Invoices() {
   const [form, setForm] = useState({ customer_id: "", invoice_no: "", description: "", amount: "", due_date: "" });
   const [copied, setCopied] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
+  // The invoice being edited (allowed for 3 hours after it's made, before anything is paid), or null for a new one.
+  const [editing, setEditing] = useState<any | null>(null);
+  const empty = { customer_id: "", invoice_no: "", description: "", amount: "", due_date: "" };
   const add = useAction();
   const act = useAction();
   const set = (k: keyof typeof form) => (e: any) => setForm({ ...form, [k]: e.target.value });
@@ -19,7 +22,8 @@ export default function Invoices() {
     <div className="space-y-8">
       <h1 className="h-page">Invoices</h1>
       <section className="card space-y-4">
-        <h2 className="h-section">New invoice</h2>
+        <h2 className="h-section">{editing ? `Edit invoice ${editing.invoice_no}` : "New invoice"}</h2>
+        {editing && <p className="text-sm text-ink">You can change this invoice until {new Date(editing.editable_until).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. After that it can't be edited.</p>}
         {customers.data && !customers.data.customers.length && <Notice>Add a customer first on the Customers page.</Notice>}
         <div className="grid gap-3 md:grid-cols-5">
           <Field label="Customer">
@@ -45,19 +49,34 @@ export default function Invoices() {
             <input className="input" value={form.description} onChange={set("description")} />
           </Field>
         </div>
-        <button
-          className="btn"
-          disabled={add.busy}
-          onClick={() =>
-            add.run(async () => {
-              await api("/api/requests", { method: "POST", json: form });
-              setForm({ customer_id: "", invoice_no: "", description: "", amount: "", due_date: "" });
-              await reqs.reload();
-            })
-          }
-        >
-          Create invoice
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            className="btn"
+            disabled={add.busy}
+            onClick={() =>
+              add.run(async () => {
+                if (editing) await api(`/api/requests/${editing.id}`, { method: "PATCH", json: { action: "edit", ...form } });
+                else await api("/api/requests", { method: "POST", json: form });
+                setForm(empty);
+                setEditing(null);
+                await reqs.reload();
+              })
+            }
+          >
+            {editing ? "Save changes" : "Create invoice"}
+          </button>
+          {editing && (
+            <button
+              className="text-sm text-ink"
+              onClick={() => {
+                setEditing(null);
+                setForm(empty);
+              }}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
         {add.error && <Notice kind="bad">{add.error}</Notice>}
       </section>
 
@@ -98,6 +117,18 @@ export default function Invoices() {
                       >
                         {copied === r.id ? "Copied" : "Copy pay link"}
                       </button>
+                      {r.editable_until && (
+                        <button
+                          className="ml-3 text-xs text-ink"
+                          onClick={() => {
+                            setEditing(r);
+                            setForm({ customer_id: r.customer_id, invoice_no: r.invoice_no, description: r.description ?? "", amount: r.amount, due_date: String(r.due_date).slice(0, 10) });
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
+                        >
+                          Edit
+                        </button>
+                      )}
                       <button className="ml-3 text-xs text-ink" onClick={() => setQr(qr === r.id ? null : r.id)}>
                         {qr === r.id ? "Hide QR code" : "QR code"}
                       </button>

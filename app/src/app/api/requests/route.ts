@@ -2,8 +2,10 @@ import { z } from "zod";
 import { body, handler, HttpError, requireBusiness } from "@/lib/api";
 import { newId, one, q } from "@/lib/db";
 import { fromUnits, toUnits } from "@/lib/money";
+import { editableUntil } from "@/lib/invoices";
 
 export const dynamic = "force-dynamic";
+
 
 export const GET = handler(async () => {
   const b = await requireBusiness();
@@ -13,7 +15,7 @@ export const GET = handler(async () => {
     [b.id],
   );
   return {
-    requests: rows.map((r) => ({ ...r, amount: fromUnits(r.amount), paid_amount: fromUnits(r.paid_amount) })),
+    requests: rows.map((r) => ({ ...r, amount: fromUnits(r.amount), paid_amount: fromUnits(r.paid_amount), editable_until: editableUntil(r as any) })),
     unmatched: (
       await q("SELECT id, from_address, amount, tx_hash, created_at, screening FROM payments_in WHERE business_id = $1 AND request_id IS NULL ORDER BY created_at DESC", [b.id])
     ).map((p) => ({ ...p, amount: fromUnits(p.amount) })),
