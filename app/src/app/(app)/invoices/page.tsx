@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, Field, Money, Notice, Status, AddressLink, useAction, useApi } from "@/components/ui";
 
@@ -20,7 +21,10 @@ export default function Invoices() {
 
   return (
     <div className="space-y-8">
-      <h1 className="h-page">Invoices</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="h-page">Invoices</h1>
+        <Link href="/import?kind=invoices" className="btn-ghost no-underline">Add many at once</Link>
+      </div>
       <section className="card space-y-4">
         <h2 className="h-section">{editing ? `Edit invoice ${editing.invoice_no}` : "New invoice"}</h2>
         {editing && <p className="text-sm text-ink">You can change this invoice until {new Date(editing.editable_until).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. After that it can't be edited.</p>}

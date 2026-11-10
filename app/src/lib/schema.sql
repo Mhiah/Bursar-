@@ -204,3 +204,16 @@ ALTER TABLE savings_moves ADD COLUMN IF NOT EXISTS next_try_at TIMESTAMPTZ;
 ALTER TABLE savings_moves ADD COLUMN IF NOT EXISTS ref TEXT;
 ALTER TABLE savings_moves ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 ALTER TABLE savings_moves ADD COLUMN IF NOT EXISTS flagged_at TIMESTAMPTZ;
+
+-- Links that let a business's own AI assistant or software add invoices and bills (the MCP connection).
+-- Only a hash of each secret link is kept; the owner sees the link once, when it's made.
+CREATE TABLE IF NOT EXISTS connections (
+  id TEXT PRIMARY KEY,
+  business_id TEXT NOT NULL REFERENCES businesses(id),
+  name TEXT NOT NULL,
+  key_hash TEXT NOT NULL UNIQUE,
+  last4 TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_used_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ
+);

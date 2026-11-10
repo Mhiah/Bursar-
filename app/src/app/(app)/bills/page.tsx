@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { api, Field, Money, Notice, Status, TxLink, useAction, useApi } from "@/components/ui";
 
@@ -15,7 +16,10 @@ export default function Bills() {
 
   return (
     <div className="space-y-8">
-      <h1 className="h-page">Bills</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="h-page">Bills</h1>
+        <Link href="/import?kind=bills" className="btn-ghost no-underline">Add many at once</Link>
+      </div>
       <section className="card space-y-4">
         <h2 className="h-section">Add a bill</h2>
         {suppliers.data && !suppliers.data.suppliers.length && <Notice>Add the supplier first on the Suppliers page.</Notice>}
