@@ -354,6 +354,37 @@ async function main() {
   const [dec] = parseEventLogs({ abi: bursarVaultAbi, logs: receipt.logs, eventName: "Decision" });
   assert.equal(dec.args.logHash, head!.hash);
 
+  // Many entries written at once still form one unbroken chain.
+  await Promise.all(Array.from({ length: 12 }, (_, i) => logDecision(bid, "note", `At once ${i}`, "test")));
+  const together = await verifyLog(bid);
+  assert.ok(together.ok, "entries written at the same moment don't break the log");
+  assert.equal((together as any).sameMoment, 0, "they queue up instead of sharing a previous entry");
+  // An old split from two entries written at the same moment (before writes queued up) isn't called tampering.
+  const head2 = await one<{ hash: string; prev_hash: string }>("SELECT hash, prev_hash FROM decisions WHERE business_id = $1 ORDER BY seq DESC LIMIT 1", [bid]);
+  {
+    const { keccak256, toHex } = await import("viem");
+    const id = newId();
+    const createdAt = new Date().toISOString();
+    const body = JSON.stringify({ id, businessId: bid, kind: "note", summary: "Written at the same moment", reasoning: "test", data: {}, createdAt, prev: head2!.prev_hash });
+    await q("INSERT INTO decisions (id, business_id, kind, summary, reasoning, data, body, hash, prev_hash, created_at) VALUES ($1,$2,'note','Written at the same moment','test','{}',$3,$4,$5,$6)", [
+      id, bid, body, keccak256(toHex(body)), head2!.prev_hash, createdAt,
+    ]);
+  }
+  const split = await verifyLog(bid);
+  assert.ok(split.ok, "a same-moment split is allowed");
+  assert.equal((split as any).sameMoment, 1);
+  await logDecision(bid, "note", "After the split", "test");
+  assert.ok((await verifyLog(bid)).ok, "the log carries on after a split");
+  // Removing an entry is still caught.
+  const second = await one<{ id: string }>("SELECT id FROM decisions WHERE business_id = $1 AND summary = 'At once 5'", [bid]);
+  const saved = await one<any>("SELECT * FROM decisions WHERE id = $1", [second!.id]);
+  await q("DELETE FROM decisions WHERE id = $1", [second!.id]);
+  assert.equal((await verifyLog(bid)).ok, false, "a removed entry breaks the log");
+  await q("INSERT INTO decisions (id, seq, business_id, kind, summary, reasoning, data, body, hash, prev_hash, anchor_tx, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)", [
+    saved.id, saved.seq, saved.business_id, saved.kind, saved.summary, saved.reasoning, saved.data, saved.body, saved.hash, saved.prev_hash, saved.anchor_tx, saved.created_at,
+  ]);
+  assert.ok((await verifyLog(bid)).ok);
+
   // Tampering with any entry is detected.
   await q("UPDATE decisions SET body = replace(body, 'Paid', 'Payd') WHERE kind = 'pay'");
   assert.equal((await verifyLog(bid)).ok, false, "an edited entry breaks the log");
