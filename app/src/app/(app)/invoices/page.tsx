@@ -108,18 +108,9 @@ export default function Invoices() {
                 <td className="whitespace-nowrap text-right">
                   {["open", "part_paid"].includes(r.status) && (
                     <>
-                      <button
-                        className="text-xs text-ink"
-                        onClick={() => {
-                          navigator.clipboard.writeText(link(r.id));
-                          setCopied(r.id);
-                        }}
-                      >
-                        {copied === r.id ? "Copied" : "Copy pay link"}
-                      </button>
                       {r.editable_until && (
                         <button
-                          className="ml-3 text-xs text-ink"
+                          className="mr-3 text-xs text-ink"
                           onClick={() => {
                             setEditing(r);
                             setForm({ customer_id: r.customer_id, invoice_no: r.invoice_no, description: r.description ?? "", amount: r.amount, due_date: String(r.due_date).slice(0, 10) });
@@ -129,6 +120,15 @@ export default function Invoices() {
                           Edit
                         </button>
                       )}
+                      <button
+                        className="text-xs text-ink"
+                        onClick={() => {
+                          navigator.clipboard.writeText(link(r.id));
+                          setCopied(r.id);
+                        }}
+                      >
+                        {copied === r.id ? "Copied" : "Copy pay link"}
+                      </button>
                       <button className="ml-3 text-xs text-ink" onClick={() => setQr(qr === r.id ? null : r.id)}>
                         {qr === r.id ? "Hide QR code" : "QR code"}
                       </button>
