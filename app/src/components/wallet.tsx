@@ -13,6 +13,8 @@ type Ctx = {
   kind: "injected" | "local" | null;
   client: Client | null;
   connectInjected: () => Promise<Address>;
+  /** Opens the browser wallet's account picker, so the owner can choose which account signs. */
+  pickInjected: () => Promise<Client>;
   /** The connected wallet, reconnecting the browser wallet first if the page was reloaded. */
   ensureClient: () => Promise<Client>;
   unlockLocal: (password: string) => Promise<Address>;
@@ -67,6 +69,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const connectInjected = useCallback(async () => (await openInjected()).account.address, [openInjected]);
+
+  const pickInjected = useCallback(async () => {
+    if (!window.ethereum) throw new Error("No browser wallet found.");
+    // MetaMask and most wallets show their account picker for this; others just reconnect.
+    await window.ethereum.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] }).catch((e: any) => {
+      if (e?.code === 4001) throw new Error("You closed the wallet without choosing an account.");
+    });
+    return openInjected();
+  }, [openInjected]);
 
   const ensureClient = useCallback(async () => client ?? openInjected(), [client, openInjected]);
 
@@ -123,8 +134,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [kind, disconnect]);
 
   const value = useMemo<Ctx>(
-    () => ({ address: client?.account.address ?? null, kind, client, connectInjected, ensureClient, unlockLocal, disconnect }),
-    [client, kind, connectInjected, ensureClient, unlockLocal, disconnect],
+    () => ({ address: client?.account.address ?? null, kind, client, connectInjected, pickInjected, ensureClient, unlockLocal, disconnect }),
+    [client, kind, connectInjected, pickInjected, ensureClient, unlockLocal, disconnect],
   );
   const answer = (ok: boolean) => {
     if (!pending) return;

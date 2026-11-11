@@ -4,6 +4,7 @@ import { useState } from "react";
 import { getAddress, isAddress, parseUnits } from "viem";
 import { useBusiness } from "@/components/business";
 import { ConnectOwner, useOwnerSigner } from "@/components/signer";
+import { storedLocalAddress } from "@/lib/local-wallet";
 import { Field, Notice, short, TxLink, useAction } from "@/components/ui";
 import { ownerCall } from "@/lib/owner-tx";
 
@@ -27,6 +28,10 @@ export default function Withdraw() {
   const [done, setDone] = useState<{ amount: string; to: string; hash: string } | null>(null);
   // Pressing Withdraw opens a confirm step, signed by the main (owner) wallet, wherever the money goes.
   const [confirming, setConfirming] = useState(false);
+
+  // An owner whose wallet was made on this site unlocks it with its password; everyone else signs in their browser wallet.
+  const localOwner = typeof window !== "undefined" && storedLocalAddress()?.toLowerCase() === business.owner_address.toLowerCase();
+  const needsUnlock = !signer.ready && localOwner;
 
   const to = where === "mine" ? business.owner_address : other.trim();
   const toOk = isAddress(to);
@@ -78,18 +83,25 @@ export default function Withdraw() {
               Send <b>{amount.trim()} USDC</b> to <span className="font-mono">{short(to)}</span>
               {where === "mine" ? " (your connected wallet)" : ""}?
             </p>
-            {signer.ready ? (
-              <p className="text-sm text-ink">Confirm with your main wallet <span className="font-mono">{short(business.owner_address)}</span> to prove it's you sending the money out.</p>
+            {needsUnlock ? (
+              <ConnectOwner owner={business.owner_address} why="To prove it's you, unlock your main wallet" />
             ) : (
-              <ConnectOwner owner={business.owner_address} why="To prove it's you, confirm with your main wallet" />
+              <p className="text-sm text-ink">Confirm with your main wallet <span className="font-mono">{short(business.owner_address)}</span> to prove it's you sending the money out.</p>
             )}
             <div className="flex flex-wrap gap-3">
               <button
                 className="btn"
-                disabled={!signer.ready || act.busy}
+                disabled={needsUnlock || act.busy}
                 onClick={() =>
                   act.run(async () => {
-                    const hash = await ownerCall(signer.client!, vault.address, "withdraw", [getAddress(to), value!]);
+                    let client = signer.ready ? signer.client! : null;
+                    if (!client) {
+                      // Opens the browser wallet so the owner picks their main account, then signs.
+                      client = await signer.pickInjected();
+                      if (client.account.address.toLowerCase() !== business.owner_address.toLowerCase())
+                        throw new Error(`Your wallet is on ${short(client.account.address)}. Choose your main wallet ${short(business.owner_address)} in it, then press Confirm and send again.`);
+                    }
+                    const hash = await ownerCall(client, vault.address, "withdraw", [getAddress(to), value!]);
                     setDone({ amount: amount.trim(), to: getAddress(to), hash });
                     setAmount("");
                     setConfirming(false);
