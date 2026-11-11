@@ -170,7 +170,7 @@ async function planInvoices(b: Business, rows: Record<string, unknown>[]): Promi
     if (no.length > 64) return fail("Invoice number is too long.");
     if (units == null) return fail("Amount isn't a number.");
     if (units <= 0n) return fail("Amount must be more than zero.");
-    if (!due) return fail("Due date isn't a date. Use dd/mm/yyyy, like 31/12/2026.");
+    if (!due) return fail("Due date isn't a date.");
     if (email && !isEmail(email)) return fail("Customer email doesn't look right.");
     if (wallet && !isAddress(wallet)) return fail("Customer wallet isn't a wallet address.");
     const n = normaliseInvoiceNo(no);
@@ -238,7 +238,7 @@ async function planBills(b: Business, rows: Record<string, unknown>[]): Promise<
     if (no.length > 64) { fail("Invoice number is too long."); continue; }
     if (units == null) { fail("Amount isn't a number."); continue; }
     if (units <= 0n) { fail("Amount must be more than zero."); continue; }
-    if (!due) { fail("Due date isn't a date. Use dd/mm/yyyy, like 31/12/2026."); continue; }
+    if (!due) { fail("Due date isn't a date."); continue; }
     if (expectedRaw && expected == null) { fail("Agreed amount isn't a number."); continue; }
     if (category.length > 31) { fail("Budget category is too long."); continue; }
     if (wallet && !isAddress(wallet)) { fail("Supplier wallet isn't a wallet address."); continue; }
