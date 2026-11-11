@@ -12,7 +12,7 @@ export function useOwnerSigner(owner: string | undefined) {
   return { ...w, ready };
 }
 
-export function ConnectOwner({ owner }: { owner: string }) {
+export function ConnectOwner({ owner, why }: { owner: string; why?: string }) {
   const w = useWallet();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export function ConnectOwner({ owner }: { owner: string }) {
   return (
     <div className="rounded-lg border border-clay-line bg-clay-soft p-4 text-sm text-ink">
       <p className="mb-3">
-        To sign this, connect your business wallet <span className="font-mono">{short(owner)}</span>.
+        {why ?? "To sign this, connect your business wallet"} <span className="font-mono">{short(owner)}</span>.
         {w.address && <> You're connected as {short(w.address)}, which isn't it.</>}
       </p>
       <div className="flex flex-wrap items-center gap-2">

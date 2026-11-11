@@ -4,7 +4,7 @@ import { useState } from "react";
 import { getAddress, isAddress, parseUnits } from "viem";
 import { useBusiness } from "@/components/business";
 import { ConnectOwner, useOwnerSigner } from "@/components/signer";
-import { Field, Notice, TxLink, useAction } from "@/components/ui";
+import { Field, Notice, short, TxLink, useAction } from "@/components/ui";
 import { ownerCall } from "@/lib/owner-tx";
 
 /** USDC text to units, or null if it isn't a positive number. */
@@ -25,6 +25,8 @@ export default function Withdraw() {
   const [other, setOther] = useState("");
   const [amount, setAmount] = useState("");
   const [done, setDone] = useState<{ amount: string; to: string; hash: string } | null>(null);
+  // Pressing Withdraw opens a confirm step, signed by the main (owner) wallet, wherever the money goes.
+  const [confirming, setConfirming] = useState(false);
 
   const to = where === "mine" ? business.owner_address : other.trim();
   const toOk = isAddress(to);
@@ -42,16 +44,16 @@ export default function Withdraw() {
         <div className="space-y-2">
           <span className="label">Send to</span>
           <label className="flex items-center gap-2 text-sm">
-            <input type="radio" name="to" checked={where === "mine"} onChange={() => setWhere("mine")} />
+            <input type="radio" name="to" checked={where === "mine"} onChange={() => (setWhere("mine"), setConfirming(false))} />
             My connected wallet <span className="font-mono text-xs">{business.owner_address}</span>
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input type="radio" name="to" checked={where === "other"} onChange={() => setWhere("other")} />
+            <input type="radio" name="to" checked={where === "other"} onChange={() => (setWhere("other"), setConfirming(false))} />
             Another wallet
           </label>
           {where === "other" && (
             <div className="max-w-xl pl-6">
-              <input className="input font-mono" placeholder="0x…" value={other} onChange={(e) => setOther(e.target.value)} />
+              <input className="input font-mono" placeholder="0x…" value={other} onChange={(e) => (setOther(e.target.value), setConfirming(false))} />
               {other.trim() && !toOk && <p className="mt-1 text-xs text-bad">That isn't a wallet address.</p>}
               {toOk && <p className="mt-1 text-xs text-ink">Check this address carefully. Money sent to the wrong wallet can't be brought back.</p>}
             </div>
@@ -60,28 +62,47 @@ export default function Withdraw() {
 
         <div className="max-w-xs">
           <Field label="Amount (USDC)">
-            <input className="input" inputMode="decimal" value={amount} onChange={(e) => (setAmount(e.target.value), setDone(null))} />
+            <input className="input" inputMode="decimal" value={amount} onChange={(e) => (setAmount(e.target.value), setDone(null), setConfirming(false))} />
           </Field>
           {amount && value == null && <p className="mt-1 text-xs text-bad">Enter an amount more than zero.</p>}
           {tooMuch && <p className="mt-1 text-xs text-bad">That's more than your vault holds.</p>}
         </div>
 
-        {value != null && !signer.ready && <ConnectOwner owner={business.owner_address} />}
-        <button
-          className="btn"
-          disabled={!signer.ready || act.busy || !toOk || value == null || tooMuch}
-          onClick={() =>
-            act.run(async () => {
-              setDone(null);
-              const hash = await ownerCall(signer.client!, vault.address, "withdraw", [getAddress(to), value!]);
-              setDone({ amount: amount.trim(), to: getAddress(to), hash });
-              setAmount("");
-              await reload();
-            })
-          }
-        >
-          {act.busy ? "Withdrawing…" : "Withdraw"}
-        </button>
+        {!confirming ? (
+          <button className="btn" disabled={!toOk || value == null || tooMuch} onClick={() => (setDone(null), setConfirming(true))}>
+            Withdraw
+          </button>
+        ) : (
+          <div className="space-y-3 rounded-xl border border-rule bg-cream p-4">
+            <p className="text-sm">
+              Send <b>{amount.trim()} USDC</b> to <span className="font-mono">{short(to)}</span>
+              {where === "mine" ? " (your connected wallet)" : ""}?
+            </p>
+            {signer.ready ? (
+              <p className="text-sm text-ink">Confirm with your main wallet <span className="font-mono">{short(business.owner_address)}</span> to prove it's you sending the money out.</p>
+            ) : (
+              <ConnectOwner owner={business.owner_address} why="To prove it's you, confirm with your main wallet" />
+            )}
+            <div className="flex flex-wrap gap-3">
+              <button
+                className="btn"
+                disabled={!signer.ready || act.busy}
+                onClick={() =>
+                  act.run(async () => {
+                    const hash = await ownerCall(signer.client!, vault.address, "withdraw", [getAddress(to), value!]);
+                    setDone({ amount: amount.trim(), to: getAddress(to), hash });
+                    setAmount("");
+                    setConfirming(false);
+                    await reload();
+                  })
+                }
+              >
+                {act.busy ? "Sending…" : "Confirm and send"}
+              </button>
+              <button className="btn-ghost" disabled={act.busy} onClick={() => setConfirming(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
         {act.error && <Notice kind="bad">{act.error}</Notice>}
         {done && (
           <Notice kind="ok">
