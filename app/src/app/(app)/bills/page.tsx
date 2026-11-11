@@ -18,7 +18,7 @@ export default function Bills() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="h-page">Bills</h1>
-        <Link href="/import?kind=bills" className="btn-ghost no-underline">Add many at once</Link>
+        <Link href="/import?kind=bills" className="btn-ghost no-underline">Import</Link>
       </div>
       <section className="card space-y-4">
         <h2 className="h-section">Add a bill</h2>

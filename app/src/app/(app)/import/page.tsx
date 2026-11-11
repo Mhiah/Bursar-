@@ -118,7 +118,7 @@ export default function Import() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="h-page">Add many at once</h1>
+        <h1 className="h-page">Import</h1>
         <p className="mt-3 text-sm text-ink">Bring in invoices or bills from a spreadsheet, or connect your AI assistant or your own software.</p>
       </div>
 

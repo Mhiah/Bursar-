@@ -23,7 +23,7 @@ export default function Invoices() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="h-page">Invoices</h1>
-        <Link href="/import?kind=invoices" className="btn-ghost no-underline">Add many at once</Link>
+        <Link href="/import?kind=invoices" className="btn-ghost no-underline">Import</Link>
       </div>
       <section className="card space-y-4">
         <h2 className="h-section">{editing ? `Edit invoice ${editing.invoice_no}` : "New invoice"}</h2>
