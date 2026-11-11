@@ -13,11 +13,11 @@ type Result = { kind: Kind; created: number; skipped: number; rows: Row[] };
 const TEMPLATE: Record<Kind, string[][]> = {
   invoices: [
     ["Customer", "Customer email", "Invoice no.", "Amount (USDC)", "Due date", "What for"],
-    ["Ada Stores", "ada@example.com", "INV-101", "25", "2026-12-31", "2 pairs of sneakers"],
+    ["Ada Stores", "ada@example.com", "INV-101", "25", "31/12/2026", "2 pairs of sneakers"],
   ],
   bills: [
     ["Supplier", "Supplier wallet", "Their invoice no.", "Amount (USDC)", "Due date", "Budget category", "Agreed amount", "What for"],
-    ["Lagos Leather Co", "0x…", "LL-2041", "120", "2026-12-31", "stock", "120", "Leather for December"],
+    ["Lagos Leather Co", "0x…", "LL-2041", "120", "31/12/2026", "stock", "120", "Leather for December"],
   ],
 };
 
@@ -51,6 +51,9 @@ function parseCsv(text: string): string[][] {
   if (cur || row.length) row.push(cur), rows.push(row);
   return rows;
 }
+
+/** "2026-12-31" -> "31/12/2026"; anything else as it is. */
+const ddmmyyyy = (d: string | null) => (d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d.split("-").reverse().join("/") : d);
 
 const value = (v: unknown) => (v instanceof Date ? v.toISOString().slice(0, 10) : v);
 
@@ -136,8 +139,7 @@ export default function Import() {
           Use a .csv or .xlsx file with one {kind === "invoices" ? "invoice" : "bill"} per row. The first row is the headings.{" "}
           {kind === "invoices"
             ? "Customers are matched by name, and new names are added as new customers."
-            : "Suppliers are matched by name. A new supplier needs their wallet, and you approve it before the agent can pay them."}{" "}
-          Dates can be 2026-12-31 or 31/12/2026.
+            : "Suppliers are matched by name. A new supplier needs their wallet, and you approve it before the agent can pay them."}
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <button className="btn-ghost" onClick={template}>Download template</button>
@@ -207,7 +209,7 @@ function RowsTable({ kind, rows }: { kind: Kind; rows: Row[] }) {
               <td>{r.who || "—"}</td>
               <td>{r.invoice_no || "—"}</td>
               <td className="figure">{r.amount ?? "—"}</td>
-              <td className="whitespace-nowrap">{r.due_date ?? "—"}</td>
+              <td className="whitespace-nowrap">{ddmmyyyy(r.due_date) ?? "—"}</td>
               <td className="max-w-sm text-xs">
                 {r.ok ? <span className="text-ink">{r.notes.length ? r.notes.join(". ") : "Ready"}</span> : <span className="text-bad">{r.problem}</span>}
               </td>

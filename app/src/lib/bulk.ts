@@ -84,13 +84,13 @@ function amountOf(v: unknown): bigint | null {
   }
 }
 
-/** "2026-12-01", "2026/12/01", "1/12/2026" (day first) or a full date-time -> "2026-12-01". */
+/** "2026-12-01", "2026/12/01", "1/12/2026" or "1/12/26" (day first) or a full date-time -> "2026-12-01". */
 export function dateOf(v: unknown): string | null {
   const s = text(v);
   let y: number, m: number, d: number;
   let hit = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[T ].*)?$/);
   if (hit) [y, m, d] = [+hit[1], +hit[2], +hit[3]];
-  else if ((hit = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/))) [d, m, y] = [+hit[1], +hit[2], +hit[3]];
+  else if ((hit = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4}|\d{2})$/))) [d, m, y] = [+hit[1], +hit[2], hit[3].length === 2 ? 2000 + +hit[3] : +hit[3]];
   else return null;
   const t = new Date(Date.UTC(y, m - 1, d));
   if (t.getUTCFullYear() !== y || t.getUTCMonth() !== m - 1 || t.getUTCDate() !== d) return null;
@@ -170,7 +170,7 @@ async function planInvoices(b: Business, rows: Record<string, unknown>[]): Promi
     if (no.length > 64) return fail("Invoice number is too long.");
     if (units == null) return fail("Amount isn't a number.");
     if (units <= 0n) return fail("Amount must be more than zero.");
-    if (!due) return fail("Due date isn't a date. Use 2026-12-31 or 31/12/2026.");
+    if (!due) return fail("Due date isn't a date. Use dd/mm/yyyy, like 31/12/2026.");
     if (email && !isEmail(email)) return fail("Customer email doesn't look right.");
     if (wallet && !isAddress(wallet)) return fail("Customer wallet isn't a wallet address.");
     const n = normaliseInvoiceNo(no);
@@ -238,7 +238,7 @@ async function planBills(b: Business, rows: Record<string, unknown>[]): Promise<
     if (no.length > 64) { fail("Invoice number is too long."); continue; }
     if (units == null) { fail("Amount isn't a number."); continue; }
     if (units <= 0n) { fail("Amount must be more than zero."); continue; }
-    if (!due) { fail("Due date isn't a date. Use 2026-12-31 or 31/12/2026."); continue; }
+    if (!due) { fail("Due date isn't a date. Use dd/mm/yyyy, like 31/12/2026."); continue; }
     if (expectedRaw && expected == null) { fail("Agreed amount isn't a number."); continue; }
     if (category.length > 31) { fail("Budget category is too long."); continue; }
     if (wallet && !isAddress(wallet)) { fail("Supplier wallet isn't a wallet address."); continue; }
