@@ -71,9 +71,6 @@ export default function Settings() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suppliers.data, extraCats, changes.version]);
 
-  // ---- withdraw
-  const [wd, setWd] = useState({ to: business.owner_address, amount: "" });
-
   // ---- agent settings (kept by Bursar, not on the vault, so no wallet needed)
   const [s, setS] = useState(business.settings);
 
@@ -259,24 +256,6 @@ export default function Settings() {
         <ChangesBar className="w-full md:max-w-md" />
       </div>
 
-      <section className="card space-y-4">
-        <div>
-          <h2 className="h-section">Take money out</h2>
-          <p className="text-sm text-ink">You can always withdraw, reserve included. Balance: {vault.balance} USDC.</p>
-        </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          <Field label="To wallet"><input className="input font-mono" value={wd.to} onChange={(e) => setWd({ ...wd, to: e.target.value })} /></Field>
-          <Field label="Amount (USDC)"><input className="input" value={wd.amount} onChange={(e) => setWd({ ...wd, amount: e.target.value })} /></Field>
-        </div>
-        {wd.amount && <ConnectOwner owner={business.owner_address} />}
-        <button
-          className="btn-ghost"
-          disabled={!signer.ready || act.busy || !isAddress(wd.to) || !wd.amount}
-          onClick={() => call("Withdrawn.", "withdraw", [getAddress(wd.to), parseUnits(wd.amount, 6)])}
-        >
-          Withdraw
-        </button>
-      </section>
     </div>
   );
 }
