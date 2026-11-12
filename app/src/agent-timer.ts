@@ -4,8 +4,33 @@ import { agentEveryMinutes } from "./agent/schedule";
 import { runAll } from "./agent/run";
 import { mockDecider } from "./agent/mock-decider";
 import { MOCK } from "./lib/mock";
+import { q } from "./lib/db";
+import { syncIncoming } from "./agent/incoming";
+import type { Business } from "./lib/session";
+
+/** Money that arrived is looked for every minute, on its own (no AI, so it's free): an invoice shows as paid
+ * soon after the customer pays, without waiting for the agent's next run. PAYMENTS_EVERY_SECONDS changes it, 0 turns it off. */
+function startPaymentsTimer() {
+  const set = process.env.PAYMENTS_EVERY_SECONDS;
+  const seconds = set !== undefined && set !== "" ? Math.max(0, Number(set) || 0) : MOCK ? 15 : 60;
+  if (!seconds) return;
+  let running = false;
+  setInterval(async () => {
+    if (running) return;
+    running = true;
+    try {
+      const rows = await q<Business>("SELECT * FROM businesses WHERE vault_address IS NOT NULL");
+      for (const b of rows) await syncIncoming(b).catch((e) => console.error(new Date().toISOString(), "payments check failed", b.id, e));
+    } catch (e) {
+      console.error(new Date().toISOString(), "payments check failed", e);
+    } finally {
+      running = false;
+    }
+  }, seconds * 1000);
+}
 
 export function startAgentTimer() {
+  startPaymentsTimer();
   const minutes = agentEveryMinutes();
   if (!minutes) return;
   const tick = async () => {

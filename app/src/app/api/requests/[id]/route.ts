@@ -4,7 +4,7 @@ import { one, q } from "@/lib/db";
 import { logDecision } from "@/lib/decisions";
 import { fromUnits, toUnits } from "@/lib/money";
 import { EDIT_WINDOW_HOURS } from "@/lib/invoices";
-import { applyPayment } from "@/agent/incoming";
+import { applyPayment, syncIncoming } from "@/agent/incoming";
 
 const Input = z.discriminatedUnion("action", [
   z.object({ action: z.literal("cancel") }),
@@ -38,6 +38,15 @@ export const PATCH = handler(async (req: Request, { params }: { params: Promise<
     if (amount <= 0n) throw new HttpError(400, "Amount must be more than zero.");
     const clash = await one("SELECT 1 FROM payment_requests WHERE business_id = $1 AND invoice_no = $2 AND id <> $3", [b.id, input.invoice_no, id]);
     if (clash) throw new HttpError(409, `You already have an invoice numbered ${input.invoice_no}.`);
+    // Look for money that has just arrived first, so an invoice the customer already paid can't be edited.
+    if (b.vault_address) await syncIncoming(b).catch(() => {});
+    const waiting = await one(
+      `SELECT 1 FROM payments_in p JOIN payment_requests r ON r.id = $1 AND r.business_id = p.business_id
+       WHERE p.business_id = $2 AND p.request_id IS NULL AND p.created_at >= r.created_at AND p.amount = r.amount
+         AND lower(p.from_address) <> lower($3)`,
+      [id, b.id, b.owner_address],
+    );
+    if (waiting) throw new HttpError(409, "A payment of this amount has arrived and isn't matched to an invoice yet, so this invoice can't be edited.");
     // One update with every condition in it, so the rule holds even if a payment arrives at the same moment.
     const before = await one<any>("SELECT invoice_no, amount::text, due_date FROM payment_requests WHERE id = $1 AND business_id = $2", [id, b.id]);
     const rows = await q(
