@@ -8,11 +8,11 @@ import { q } from "./lib/db";
 import { syncIncoming } from "./agent/incoming";
 import type { Business } from "./lib/session";
 
-/** Money that arrived is looked for every minute, on its own (no AI, so it's free): an invoice shows as paid
+/** Money that arrived is looked for every 5 minutes, on its own (no AI, so it's free): an invoice shows as paid
  * soon after the customer pays, without waiting for the agent's next run. PAYMENTS_EVERY_SECONDS changes it, 0 turns it off. */
 function startPaymentsTimer() {
   const set = process.env.PAYMENTS_EVERY_SECONDS;
-  const seconds = set !== undefined && set !== "" ? Math.max(0, Number(set) || 0) : MOCK ? 15 : 60;
+  const seconds = set !== undefined && set !== "" ? Math.max(0, Number(set) || 0) : MOCK ? 15 : 300;
   if (!seconds) return;
   let running = false;
   setInterval(async () => {

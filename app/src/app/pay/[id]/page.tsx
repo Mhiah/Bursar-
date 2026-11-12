@@ -69,17 +69,29 @@ export default function Pay({ params }: { params: Promise<{ id: string }> }) {
   };
 
   // Tell the business which invoice this transaction paid, so it is matched to this invoice and no other.
-  // A few tries, in case the server's view of the chain is a moment behind the wallet's.
+  // It keeps trying for about five minutes (the server's view of the chain can be behind the wallet's), and the
+  // transaction is remembered in this browser, so reopening the pay link tries again.
+  const pendingKey = `bursar-pay-${id}`;
   const report = async (hash: string) => {
-    for (let i = 0; i < 4; i++) {
+    try { localStorage.setItem(pendingKey, hash); } catch {}
+    for (let i = 0; i < 40; i++) {
       try {
         await api(`/api/pay/${id}`, { method: "POST", json: { txHash: hash } });
+        try { localStorage.removeItem(pendingKey); } catch {}
+        inv.reload();
         return;
       } catch {
-        await new Promise((r) => setTimeout(r, 4000));
+        await new Promise((r) => setTimeout(r, i < 5 ? 3000 : 8000));
       }
     }
   };
+  // A payment sent from this browser that wasn't reported yet (page closed, connection dropped): report it now.
+  useEffect(() => {
+    let hash: string | null = null;
+    try { hash = localStorage.getItem(pendingKey); } catch {}
+    if (hash && /^0x[0-9a-fA-F]{64}$/.test(hash)) void report(hash);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const pay = () =>
     act.run(async () => {
@@ -89,6 +101,8 @@ export default function Pay({ params }: { params: Promise<{ id: string }> }) {
         await switchToArc(window.ethereum);
         const wallet = createWalletClient({ account, chain, transport: custom(window.ethereum) });
         const hash = await wallet.writeContract({ address: USDC, abi: erc20, functionName: "transfer", args: [to, parseUnits(amount, 6)] });
+        // Remembered straight away, so it is still reported if the page is closed while the payment confirms.
+        try { localStorage.setItem(pendingKey, hash); } catch {}
         await browserPublicClient.waitForTransactionReceipt({ hash });
         setSent({ hash, note: "Payment sent." });
         void report(hash);

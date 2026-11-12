@@ -150,6 +150,7 @@ export default function Invoices() {
           </tbody>
         </table>
         {!reqs.data?.requests.length && <p className="pt-3 text-sm text-ink">No invoices yet.</p>}
+        <p className="pt-3 text-xs text-ink">Payments are checked every 5 minutes.</p>
       </section>
 
       {!!reqs.data?.unmatched.length && (
