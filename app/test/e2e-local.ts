@@ -317,6 +317,69 @@ async function main() {
   const sums = await q<{ paid_amount: string }>("SELECT paid_amount FROM payment_requests WHERE id IN ($1,$2)", [inv5a, inv5b]);
   assert.equal(sums.reduce((a, r) => a + BigInt(r.paid_amount), 0n), usd(5), "the 5 USDC is credited once");
 
+  // ---------------------------------------------------------------- matching: someone else's pay link can't claim a payment
+  // Anyone with a pay link can report any transaction hash (they are public onchain). Carol, a known customer, pays
+  // her invoice straight from her wallet; Mallory, another customer with no wallet on file, reports Carol's
+  // transaction from the pay page of Mallory's own, smaller invoice before the payment is handled.
+  {
+    const carolKey = privateKeyToAccount(("0x" + "22".repeat(32)) as Hex);
+    await walletFor(deployer).sendTransaction({ to: carolKey.address, value: 10n ** 18n });
+    await tx(deployer, usdc.address, usdc.abi, "mint", [carolKey.address, usd(100)]);
+    const carol = newId();
+    const mallory = newId();
+    await q("INSERT INTO customers (id, business_id, name, wallet_address) VALUES ($1,$2,'Carol',$3)", [carol, bid, carolKey.address]);
+    await q("INSERT INTO customers (id, business_id, name) VALUES ($1,$2,'Mallory')", [mallory, bid]);
+    const carolInv = newId();
+    const malloryInv = newId();
+    await q("INSERT INTO payment_requests (id, business_id, customer_id, invoice_no, amount, due_date) VALUES ($1,$2,$3,'INV-C1',$4,'2026-12-01')", [carolInv, bid, carol, usd(50).toString()]);
+    await q("INSERT INTO payment_requests (id, business_id, customer_id, invoice_no, amount, due_date) VALUES ($1,$2,$3,'INV-M1',$4,'2026-12-01')", [malloryInv, bid, mallory, usd(20).toString()]);
+    const carolPay = await tx(carolKey, usdc.address, usdc.abi, "transfer", [vault, usd(50)]);
+    // Mallory gets there first.
+    assert.equal((await claimPayment(malloryInv, carolPay.transactionHash)).ok, true);
+    const st = async (id: string) => (await one<any>("SELECT status FROM payment_requests WHERE id = $1", [id]))!.status;
+    assert.equal(await st(malloryInv), "open", "Mallory's invoice isn't paid with Carol's money");
+    assert.equal((await one<any>("SELECT wallet_address FROM customers WHERE id = $1", [mallory]))!.wallet_address, null, "Carol's wallet isn't saved as Mallory's");
+    assert.equal(await st(carolInv), "paid", "Carol's payment still goes to Carol's invoice (her known wallet, exact amount)");
+
+    // A stranger's wallet, and a claim for an invoice of a different amount: not matched, the owner decides.
+    const daveKey = privateKeyToAccount(("0x" + "33".repeat(32)) as Hex);
+    await walletFor(deployer).sendTransaction({ to: daveKey.address, value: 10n ** 18n });
+    await tx(deployer, usdc.address, usdc.abi, "mint", [daveKey.address, usd(100)]);
+    const davePay = await tx(daveKey, usdc.address, usdc.abi, "transfer", [vault, usd(70)]);
+    assert.equal((await claimPayment(malloryInv, davePay.transactionHash)).ok, true);
+    assert.equal(await st(malloryInv), "open", "a claim whose amount doesn't fit the invoice isn't trusted");
+    const dp = (await one<any>("SELECT request_id, processed_at FROM payments_in WHERE tx_hash = $1", [davePay.transactionHash]))!;
+    assert.equal(dp.request_id, null);
+    assert.equal(dp.processed_at, null, "it waits for the right pay page's report, then goes to the owner");
+
+    // When two pay pages report one transaction and it was already matched, the owner is told.
+    const ericKey = privateKeyToAccount(("0x" + "44".repeat(32)) as Hex);
+    await walletFor(deployer).sendTransaction({ to: ericKey.address, value: 10n ** 18n });
+    await tx(deployer, usdc.address, usdc.abi, "mint", [ericKey.address, usd(100)]);
+    const eric = newId();
+    await q("INSERT INTO customers (id, business_id, name) VALUES ($1,$2,'Eric')", [eric, bid]);
+    const ericInv = newId();
+    await q("INSERT INTO payment_requests (id, business_id, customer_id, invoice_no, amount, due_date) VALUES ($1,$2,$3,'INV-E1',$4,'2026-12-01')", [ericInv, bid, eric, usd(20).toString()]);
+    const ericPay = await tx(ericKey, usdc.address, usdc.abi, "transfer", [vault, usd(20)]);
+    // Same amount as Mallory's invoice: Mallory's early claim wins, as nothing onchain tells them apart...
+    assert.equal((await claimPayment(malloryInv, ericPay.transactionHash)).ok, true);
+    assert.equal(await st(malloryInv), "paid");
+    // ...but Eric's own pay page reports it a moment later, and the owner is warned.
+    assert.equal((await claimPayment(ericInv, ericPay.transactionHash)).ok, true);
+    const warn = await q("SELECT 1 FROM decisions WHERE business_id = $1 AND kind = 'attention' AND summary LIKE '%INV-E1%' AND summary LIKE '%INV-M1%'", [bid]);
+    assert.equal(warn.length, 1, "the owner is told one payment was reported by two pay pages");
+  }
+
+  // ---------------------------------------------------------------- a bill the vault paid but the books missed is recorded, not retried forever
+  {
+    await tx(owner, vault, bursarVaultAbi, "setBudget", [categoryKey("suppliers"), usd(10_000)]);
+    const lost = await addBill("F-LOST", 1);
+    // The payment went through onchain, then the run was cut off before the bill was marked paid.
+    await tx(agent, vault, bursarVaultAbi, "agentPay", [supplier.address, usd(1), categoryKey("suppliers"), billRef(bid, sid, "F-LOST")]);
+    await runBusiness(bid, async () => ({ summary: "nothing", stop: null }));
+    assert.equal((await one<any>("SELECT status FROM bills WHERE id = $1", [lost]))!.status, "paid", "marked paid from the vault's record");
+  }
+
   // ---------------------------------------------------------------- savings: a failed move is retried, a cut-off one is finished once
   // Bob's 200 is matched; 10% is 20, but only 10 of the 60 savings budget is left: it waits and retries.
   await runSavings(await biz(), vault);

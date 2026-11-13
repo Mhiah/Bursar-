@@ -125,32 +125,52 @@ type Pick = { requestId?: string; reason: string; rememberWallet: boolean; why: 
  */
 async function chooseInvoice(businessId: string, p: Payment): Promise<Pick> {
   const amount = BigInt(p.amount);
-  const claims = await q<{ request_id: string; sender: string; status: string; wallet_address: string | null; invoice_no: string }>(
-    `SELECT DISTINCT pc.request_id, pc.sender, r.status, c.wallet_address, r.invoice_no
+  const claims = await q<{ request_id: string; sender: string; status: string; wallet_address: string | null; invoice_no: string; customer_id: string; outstanding: string; next_instalment: string | null }>(
+    `SELECT DISTINCT pc.request_id, pc.sender, r.status, c.wallet_address, r.invoice_no, r.customer_id,
+            (r.amount - r.paid_amount)::text AS outstanding, (r.instalments->0->>'amount') AS next_instalment
      FROM pay_claims pc JOIN payment_requests r ON r.id = pc.request_id JOIN customers c ON c.id = r.customer_id
      WHERE pc.tx_hash = $1 AND r.business_id = $2`,
     [p.tx_hash, businessId],
   );
   if (claims.length > 1)
     return { reason: "", rememberWallet: false, why: `The pay pages of more than one invoice (${claims.map((c) => c.invoice_no).join(", ")}) reported this same transaction.` };
+  // Why a pay page's report wasn't trusted on its own, if it wasn't.
+  let claimWhy: string | null = null;
   if (claims.length === 1) {
     const c = claims[0];
     const payer = p.from_address.toLowerCase();
     const sender = c.sender.toLowerCase();
-    if (c.status !== "open" && c.status !== "part_paid")
-      return { reason: "", rememberWallet: false, why: `It was paid from the pay page of invoice ${c.invoice_no}, which is already ${c.status}.` };
     const known = c.wallet_address?.toLowerCase();
-    if (known && known !== payer && known !== sender)
-      return { reason: "", rememberWallet: false, why: `It was paid from the pay page of invoice ${c.invoice_no}, but from a different wallet than this customer used before.` };
-    return {
-      requestId: c.request_id,
-      reason: `Paid from the pay page of invoice ${c.invoice_no}.`,
-      // Remember the wallet only when the customer sent it straight from their wallet (not through a swap).
-      rememberWallet: payer === sender,
-      why: "",
-    };
+    if (c.status !== "open" && c.status !== "part_paid") claimWhy = `It was paid from the pay page of invoice ${c.invoice_no}, which is already ${c.status}.`;
+    else if (known && known !== payer && known !== sender)
+      claimWhy = `It was paid from the pay page of invoice ${c.invoice_no}, but from a different wallet than this customer used before.`;
+    else if (!known) {
+      // Transaction hashes are public, and anyone with a pay link can report one. When this customer has no
+      // wallet on file yet, the report alone proves little, so the payment must also fit: no other customer
+      // pays from that wallet, and it is exactly what this invoice asks for.
+      const other = await one(
+        "SELECT 1 FROM customers WHERE business_id = $1 AND id <> $2 AND lower(wallet_address) IN (lower($3), lower($4)) LIMIT 1",
+        [businessId, c.customer_id, payer, sender],
+      );
+      const fits = BigInt(c.outstanding) === amount || (c.next_instalment != null && BigInt(c.next_instalment) === amount);
+      if (other) claimWhy = `The pay page of invoice ${c.invoice_no} reported it, but it came from a wallet saved for another customer.`;
+      else if (!fits) claimWhy = `The pay page of invoice ${c.invoice_no} reported it, but the amount isn't what that invoice asks for.`;
+    }
+    if (!claimWhy)
+      return {
+        requestId: c.request_id,
+        reason: `Paid from the pay page of invoice ${c.invoice_no}.`,
+        // Remember the wallet only when the customer sent it straight from their wallet (not through a swap).
+        rememberWallet: payer === sender,
+        why: "",
+      };
   }
+  const pick = await byKnownWallet(businessId, p, amount);
+  return claimWhy && !pick.requestId ? { ...pick, why: claimWhy } : pick;
+}
 
+/** A payment from a wallet a customer already paid from, for exactly what one of their open invoices asks. */
+async function byKnownWallet(businessId: string, p: Payment, amount: bigint): Promise<Pick> {
   type Open = { id: string; invoice_no: string; outstanding: string; next_instalment: string | null; customer_id: string };
   const mine = await q<Open>(
     `SELECT r.id, r.invoice_no, (r.amount - r.paid_amount)::text AS outstanding, (r.instalments->0->>'amount') AS next_instalment, r.customer_id
@@ -323,8 +343,30 @@ export async function claimPayment(requestId: string, txHash: Hex) {
     (l) => l.address.toLowerCase() === USDC.toLowerCase() && getAddress(l.args.to) === vault,
   );
   if (!transfers.length) return { ok: false, error: "That transaction didn't pay this invoice's business." };
-  await q("INSERT INTO pay_claims (tx_hash, request_id, sender) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING", [receipt.transactionHash, requestId, getAddress(receipt.from)]);
+  const fresh = await q("INSERT INTO pay_claims (tx_hash, request_id, sender) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING RETURNING tx_hash", [
+    receipt.transactionHash,
+    requestId,
+    getAddress(receipt.from),
+  ]);
   for (const l of transfers) await record(b.id, receipt.transactionHash, l.logIndex, getAddress(l.args.from), l.args.value, receipt.blockNumber);
+  // Already matched to another invoice: two pay pages claim one payment. Nothing onchain says which is right, so tell the owner.
+  if (fresh.length) {
+    const other = await one<{ id: string; amount: string; invoice_no: string }>(
+      `SELECT p.id, p.amount::text, r.invoice_no FROM payments_in p JOIN payment_requests r ON r.id = p.request_id
+       WHERE p.business_id = $1 AND p.tx_hash = $2 AND p.request_id <> $3 LIMIT 1`,
+      [b.id, receipt.transactionHash, requestId],
+    );
+    if (other) {
+      const mine = await one<{ invoice_no: string }>("SELECT invoice_no FROM payment_requests WHERE id = $1", [requestId]);
+      await logDecision(
+        b.id,
+        "attention",
+        `Invoice ${mine?.invoice_no ?? "?"}'s pay page reported a payment already matched to invoice ${other.invoice_no}`,
+        `${fromUnits(other.amount)} USDC was matched to invoice ${other.invoice_no}, and the pay page of invoice ${mine?.invoice_no ?? "?"} says it paid that invoice. Check with both customers which one really paid.`,
+        { paymentId: other.id, requestId, tx: receipt.transactionHash },
+      );
+    }
+  }
   // If it was already handled without a reference (and handed to the owner), look at it again now there is one.
   await q("UPDATE payments_in SET processed_at = NULL WHERE business_id = $1 AND tx_hash = $2 AND request_id IS NULL", [b.id, receipt.transactionHash]);
   await processPayments(b);

@@ -6,6 +6,24 @@ const nextConfig = {
   // Server-only packages that should not be bundled.
   // (The agent's timer starts with the server from src/instrumentation.ts.)
   serverExternalPackages: ["pg", "@electric-sql/pglite"],
+  // The site doesn't use next/image, so the image resizing endpoint is turned off.
+  images: { unoptimized: true },
+  poweredByHeader: false,
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          // No other site can show Bursar's pages inside a frame (stops click-tricking on the pay and owner pages).
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          ...(process.env.NODE_ENV === "production" ? [{ key: "Strict-Transport-Security", value: "max-age=31536000" }] : []),
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

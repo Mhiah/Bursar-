@@ -1,5 +1,6 @@
 import { getAddress, type Address, type Hex } from "viem";
-import { readVault } from "@/lib/chain";
+import { publicClient, readVault } from "@/lib/chain";
+import { bursarVaultAbi } from "@/lib/abi/BursarVault";
 import { one, q } from "@/lib/db";
 import { logDecision } from "@/lib/decisions";
 import { billChecks, categoryKey } from "@/lib/bills";
@@ -117,6 +118,16 @@ async function runBusinessNow(businessId: string, decide: Decider) {
     const amount = BigInt(r.amount);
     const vaultCheck = await dryRun(vault, getAddress(r.wallet_address), amount, categoryKey(r.category), r.ref);
     await q("UPDATE bills SET flags = $1 WHERE id = $2", [JSON.stringify(flags), r.id]);
+
+    // The vault already paid this bill's reference: an earlier payment went through but wasn't recorded here
+    // (a restart, or a timeout while waiting for the receipt). Record it rather than trying again forever.
+    if (vaultCheck === "AlreadyPaid" || (await publicClient.readContract({ address: vault, abi: bursarVaultAbi, functionName: "refPaid", args: [r.ref as Hex] }))) {
+      await q("UPDATE bills SET status = 'paid', paid_at = COALESCE(paid_at, now()) WHERE id = $1 AND status IN ('new','scheduled','held')", [r.id]);
+      await logDecision(b.id, "note", `${r.supplier_name}'s invoice ${r.invoice_no} is already paid`, "The vault shows this bill was paid, so it was marked paid here and won't be paid again.", {
+        billId: r.id,
+      });
+      continue;
+    }
 
     if (screening.status === "blocked") {
       await q("UPDATE bills SET status = 'blocked' WHERE id = $1", [r.id]);
