@@ -46,9 +46,9 @@ export default function Customers() {
             {list.data?.customers.map((c) => (
               <tr key={c.id}>
                 <td>{c.name}</td>
-                <td className="text-xs text-ink">{c.email || "none"}</td>
-                <td><Money value={c.reliability.outstanding} /></td>
-                <td>
+                <td data-label="Email" className="text-xs text-ink">{c.email || "none"}</td>
+                <td data-label="Owes"><Money value={c.reliability.outstanding} /></td>
+                <td data-label="History">
                   <span className="font-medium">{c.reliability.label}</span>
                   <span className="ml-2 text-xs text-ink">
                     score {c.reliability.score} · {c.reliability.paidOnTime} on time, {c.reliability.paidLate} late

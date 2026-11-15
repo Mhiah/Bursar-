@@ -65,11 +65,11 @@ export default function Bills() {
             {bills.data?.bills.map((b) => (
               <tr key={b.id}>
                 <td>{b.supplier_name}<p className="text-xs text-ink">{b.category}</p></td>
-                <td>{b.invoice_no}</td>
-                <td><Money value={b.amount} /></td>
-                <td>{b.due_date}{b.pay_after && b.status === "held" && <p className="text-xs text-ink">holding until {b.pay_after}</p>}</td>
-                <td><Status value={b.status} />{b.paid_tx && <p><TxLink hash={b.paid_tx} /></p>}</td>
-                <td className="max-w-xs text-xs text-ink">{b.flags?.length ? b.flags.map((f: any) => f.detail).join(" ") : "—"}</td>
+                <td data-label="Invoice">{b.invoice_no}</td>
+                <td data-label="Amount"><Money value={b.amount} /></td>
+                <td data-label="Due">{b.due_date}{b.pay_after && b.status === "held" && <p className="text-xs text-ink">holding until {b.pay_after}</p>}</td>
+                <td data-label="Status"><Status value={b.status} />{b.paid_tx && <p><TxLink hash={b.paid_tx} /></p>}</td>
+                <td data-label="Checks" className="text-xs text-ink sm:max-w-xs">{b.flags?.length ? b.flags.map((f: any) => f.detail).join(" ") : "—"}</td>
               </tr>
             ))}
           </tbody>

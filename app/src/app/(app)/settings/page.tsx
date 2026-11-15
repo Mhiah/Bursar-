@@ -162,10 +162,10 @@ export default function Settings() {
               {budgets.map((b) => (
                 <tr key={b.category}>
                   <td>{b.category}</td>
-                  <td>
+                  <td data-label="Budget">
                     <input className="input max-w-[140px]" value={edits[b.category] ?? b.limit} onChange={(e) => setEdits({ ...edits, [b.category]: e.target.value })} />
                   </td>
-                  <td>
+                  <td data-label="Left">
                     {b.left} USDC
                     {changes.pending(`budget:${b.category}`) && <span className="ml-3 text-xs text-ink">Waiting for approval</span>}
                   </td>

@@ -50,7 +50,7 @@ export default function Withdraw() {
           <span className="label">Send to</span>
           <label className="flex items-center gap-2 text-sm">
             <input type="radio" name="to" checked={where === "mine"} onChange={() => (setWhere("mine"), setConfirming(false))} />
-            My connected wallet <span className="font-mono text-xs">{business.owner_address}</span>
+            <span className="min-w-0">My connected wallet <span className="break-all font-mono text-xs">{business.owner_address}</span></span>
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="radio" name="to" checked={where === "other"} onChange={() => (setWhere("other"), setConfirming(false))} />
@@ -118,7 +118,7 @@ export default function Withdraw() {
         {act.error && <Notice kind="bad">{act.error}</Notice>}
         {done && (
           <Notice kind="ok">
-            Sent {done.amount} USDC to <span className="font-mono text-xs">{done.to}</span>. <TxLink hash={done.hash} label="See the transaction" />
+            Sent {done.amount} USDC to <span className="break-all font-mono text-xs">{done.to}</span>. <TxLink hash={done.hash} label="See the transaction" />
           </Notice>
         )}
       </section>

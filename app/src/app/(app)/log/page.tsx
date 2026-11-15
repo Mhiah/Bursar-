@@ -28,13 +28,13 @@ export default function Log() {
         {data?.decisions.map((d) => (
           <div key={d.id} className="px-5 py-3">
             <button className="w-full text-left" onClick={() => setOpen(open === d.id ? null : d.id)}>
-              <div className="flex items-baseline gap-3">
+              <div className="flex flex-wrap items-baseline gap-x-3">
                 <span className="w-24 shrink-0 text-xs font-medium uppercase tracking-wide text-ink">{kinds[d.kind] ?? d.kind}</span>
-                <span className="flex-1 text-sm font-medium">{d.summary}</span>
-                <span className="shrink-0 text-xs text-ink">{new Date(d.created_at).toLocaleString()}</span>
+                <span className="min-w-0 flex-1 text-sm font-medium [overflow-wrap:anywhere]">{d.summary}</span>
+                <span className="w-full shrink-0 pl-[6.75rem] text-xs text-ink sm:w-auto sm:pl-0">{new Date(d.created_at).toLocaleString()}</span>
               </div>
             </button>
-            <p className="mt-1 pl-[6.75rem] text-sm text-ink">{d.reasoning}</p>
+            <p className="mt-1 pl-[6.75rem] text-sm text-ink [overflow-wrap:anywhere]">{d.reasoning}</p>
             {open === d.id && (
               <div className="mt-2 space-y-1 pl-[6.75rem] text-xs text-ink">
                 {d.data?.tx && <p>Transaction <TxLink hash={d.data.tx} /></p>}

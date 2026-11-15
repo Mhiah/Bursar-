@@ -49,6 +49,40 @@ body {
   .table tr:last-child td {
     @apply border-b-0;
   }
+  /* Phones: each row becomes a short stacked list, so nothing runs past the card. */
+  @media (max-width: 639px) {
+    .table thead {
+      @apply hidden;
+    }
+    .table,
+    .table tbody,
+    .table tr,
+    .table td {
+      @apply block w-full;
+    }
+    .table tr {
+      @apply border-b border-rule-soft py-3;
+    }
+    .table tr:last-child {
+      @apply border-b-0;
+    }
+    .table td {
+      @apply relative border-b-0 py-0.5 pr-0 text-left [overflow-wrap:anywhere];
+    }
+    .table td:empty {
+      @apply hidden;
+    }
+    .table td[data-label] {
+      @apply pl-28;
+    }
+    .table td[data-label]::before {
+      content: attr(data-label);
+      @apply absolute left-0 top-1 w-[6.5rem] text-[11px] font-medium uppercase tracking-[0.06em] text-ink;
+    }
+    .table td:not([data-label]):first-child {
+      @apply pb-1 font-medium;
+    }
+  }
   .pill {
     @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-medium;
   }

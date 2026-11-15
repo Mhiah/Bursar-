@@ -101,15 +101,15 @@ export default function Invoices() {
             {reqs.data?.requests.map((r) => (
               <tr key={r.id}>
                 <td>{r.customer_name}</td>
-                <td>
+                <td data-label="Invoice">
                   {r.invoice_no}
                   {r.instalments && <p className="text-xs text-ink">{r.instalments.length} instalments left</p>}
                 </td>
-                <td><Money value={r.amount} /></td>
-                <td><Money value={r.paid_amount} /></td>
-                <td>{r.due_date}</td>
-                <td><Status value={r.status} /></td>
-                <td className="whitespace-nowrap text-right">
+                <td data-label="Amount"><Money value={r.amount} /></td>
+                <td data-label="Paid"><Money value={r.paid_amount} /></td>
+                <td data-label="Due">{r.due_date}</td>
+                <td data-label="Status"><Status value={r.status} /></td>
+                <td className="whitespace-nowrap sm:text-right">
                   {["open", "part_paid"].includes(r.status) && (
                     <>
                       {r.editable_until && (
@@ -157,39 +157,37 @@ export default function Invoices() {
         <section className="card space-y-3">
           <h2 className="h-section">Payments we couldn't match</h2>
           <p className="text-sm text-ink">Money arrived but it isn't clear which invoice it's for. The agent will try; you can match it yourself.</p>
-          <table className="table">
-            <tbody>
-              {reqs.data.unmatched.map((p) => (
-                <tr key={p.id}>
-                  <td><Money value={p.amount} /></td>
-                  <td>from <AddressLink address={p.from_address} /></td>
-                  <td>{p.screening && <Status value={p.screening.status} />}</td>
-                  <td className="text-right">
-                    <select
-                      className="input max-w-[220px]"
-                      defaultValue=""
-                      onChange={(e) =>
-                        e.target.value &&
-                        act.run(async () => {
-                          await api(`/api/requests/${e.target.value}`, { method: "PATCH", json: { action: "match", payment_id: p.id } });
-                          await reqs.reload();
-                        })
-                      }
-                    >
-                      <option value="">Match to invoice…</option>
-                      {reqs.data!.requests
-                        .filter((r) => ["open", "part_paid"].includes(r.status))
-                        .map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.invoice_no} · {r.customer_name}
-                          </option>
-                        ))}
-                    </select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ul className="text-sm">
+            {reqs.data.unmatched.map((p) => (
+              <li key={p.id} className="flex flex-wrap items-start gap-x-3 gap-y-2 border-b border-rule-soft py-3 last:border-0">
+                <span className="whitespace-nowrap"><Money value={p.amount} /></span>
+                <span>from <AddressLink address={p.from_address} /></span>
+                {p.screening && <Status value={p.screening.status} />}
+                <span className="w-full sm:ml-auto sm:w-auto">
+                  <select
+                    className="input sm:max-w-[220px]"
+                    defaultValue=""
+                    onChange={(e) =>
+                      e.target.value &&
+                      act.run(async () => {
+                        await api(`/api/requests/${e.target.value}`, { method: "PATCH", json: { action: "match", payment_id: p.id } });
+                        await reqs.reload();
+                      })
+                    }
+                  >
+                    <option value="">Match to invoice…</option>
+                    {reqs.data!.requests
+                      .filter((r) => ["open", "part_paid"].includes(r.status))
+                      .map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.invoice_no} · {r.customer_name}
+                        </option>
+                      ))}
+                  </select>
+                </span>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
       {act.error && <Notice kind="bad">{act.error}</Notice>}

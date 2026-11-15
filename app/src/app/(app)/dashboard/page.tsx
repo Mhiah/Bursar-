@@ -132,7 +132,7 @@ export default function Dashboard() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <section className="card">
+        <section className="card min-w-0">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="h-section">The ledger</h2>
             <Link className="text-sm text-ink" href="/log">
@@ -148,10 +148,10 @@ export default function Dashboard() {
                   <span className={`pt-0.5 font-mono text-[11px] uppercase tracking-wider ${kindTone(d.kind)}`}>{kindLabel(d.kind)}</span>
                   <div className="min-w-0">
                     <div className="flex items-baseline justify-between gap-3">
-                      <p className="text-sm font-medium">{d.summary}</p>
+                      <p className="min-w-0 text-sm font-medium [overflow-wrap:anywhere]">{d.summary}</p>
                       <span className="shrink-0 font-mono text-[11px] text-ink">{new Date(d.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
-                    <p className="mt-0.5 text-sm text-ink">{d.reasoning}</p>
+                    <p className="mt-0.5 text-sm text-ink [overflow-wrap:anywhere]">{d.reasoning}</p>
                     {d.data?.tx && <TxLink hash={d.data.tx} label="View transaction" />}
                   </div>
                 </li>
@@ -160,7 +160,7 @@ export default function Dashboard() {
           )}
         </section>
 
-        <section className="card">
+        <section className="card min-w-0">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="h-section">Who owes you</h2>
             <Link className="text-sm text-ink" href="/invoices">

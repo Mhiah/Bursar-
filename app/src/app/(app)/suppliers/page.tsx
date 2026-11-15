@@ -76,9 +76,9 @@ export default function Suppliers() {
             {list.data?.suppliers.map((s) => (
               <tr key={s.id}>
                 <td>{s.name}</td>
-                <td>
+                <td data-label="Wallet">
                   {editing && editing.id === s.id ? (
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 sm:flex-nowrap">
                       <input className="input font-mono" value={editing.wallet} onChange={(e) => setEditing({ id: s.id, wallet: e.target.value })} />
                       <button className="btn-ghost" onClick={() => act.run(async () => { await api(`/api/suppliers/${s.id}`, { method: "PATCH", json: { wallet_address: editing!.wallet } }); setEditing(null); await list.reload(); })}>Save</button>
                     </div>
@@ -89,12 +89,12 @@ export default function Suppliers() {
                     </>
                   )}
                 </td>
-                <td>{s.category}</td>
-                <td>
+                <td data-label="Category">{s.category}</td>
+                <td data-label="Agent may pay">
                   <Status value={approved[s.wallet_address] ? "yes" : "no"} />
                   {changes.pending(`payee:${s.wallet_address.toLowerCase()}`) && <p className="text-xs text-ink">Waiting for approval</p>}
                 </td>
-                <td className="whitespace-nowrap text-right text-xs">
+                <td className="whitespace-nowrap pt-1 text-xs sm:text-right">
                   <button className="text-ink" disabled={act.busy} onClick={() => setPayee(s, !approved[s.wallet_address])}>
                     {approved[s.wallet_address] ? "Remove approval" : "Approve on vault"}
                   </button>

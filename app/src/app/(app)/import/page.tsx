@@ -205,12 +205,12 @@ function RowsTable({ kind, rows }: { kind: Kind; rows: Row[] }) {
         <tbody>
           {rows.map((r) => (
             <tr key={r.row}>
-              <td className="figure">{r.row}</td>
-              <td>{r.who || "—"}</td>
-              <td>{r.invoice_no || "—"}</td>
-              <td className="figure">{r.amount ?? "—"}</td>
-              <td className="whitespace-nowrap">{ddmmyyyy(r.due_date) ?? "—"}</td>
-              <td className="max-w-sm text-xs">
+              <td data-label="Row" className="figure">{r.row}</td>
+              <td data-label={kind === "invoices" ? "Customer" : "Supplier"}>{r.who || "—"}</td>
+              <td data-label="Invoice">{r.invoice_no || "—"}</td>
+              <td data-label="Amount" className="figure">{r.amount ?? "—"}</td>
+              <td data-label="Due" className="whitespace-nowrap">{ddmmyyyy(r.due_date) ?? "—"}</td>
+              <td data-label="Check" className="text-xs sm:max-w-sm">
                 {r.ok ? <span className="text-ink">{r.notes.length ? r.notes.join(". ") : "Ready"}</span> : <span className="text-bad">{r.problem}</span>}
               </td>
             </tr>
@@ -282,9 +282,9 @@ function Connections() {
             {list.data.connections.map((c) => (
               <tr key={c.id}>
                 <td>{c.name}<p className="font-mono text-xs text-ink">…{c.last4}</p></td>
-                <td>{when(c.created_at)}</td>
-                <td>{c.last_used_at ? when(c.last_used_at) : "Not yet"}</td>
-                <td className="text-right">
+                <td data-label="Made">{when(c.created_at)}</td>
+                <td data-label="Last used">{c.last_used_at ? when(c.last_used_at) : "Not yet"}</td>
+                <td className="sm:text-right">
                   <button
                     className="text-xs text-bad"
                     disabled={act.busy}
