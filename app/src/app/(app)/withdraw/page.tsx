@@ -5,7 +5,7 @@ import { getAddress, isAddress, parseUnits } from "viem";
 import { useBusiness } from "@/components/business";
 import { ConnectOwner, useOwnerSigner } from "@/components/signer";
 import { storedLocalAddress } from "@/lib/local-wallet";
-import { Field, Notice, short, TxLink, useAction } from "@/components/ui";
+import { api, AddressLink, Field, Money, Notice, short, TxLink, useAction, useApi } from "@/components/ui";
 import { ownerCall } from "@/lib/owner-tx";
 
 /** USDC text to units, or null if it isn't a positive number. */
@@ -28,6 +28,9 @@ export default function Withdraw() {
   const [done, setDone] = useState<{ amount: string; to: string; hash: string } | null>(null);
   // Pressing Withdraw opens a confirm step, signed by the main (owner) wallet, wherever the money goes.
   const [confirming, setConfirming] = useState(false);
+  // "Transactions" opens the list of every withdrawal and the wallet it went to.
+  const [showList, setShowList] = useState(false);
+  const list = useApi<{ withdrawals: { tx_hash: string; to_address: string; amount: string; at: string }[]; loadingOlder: boolean }>("/api/withdrawals");
 
   // An owner whose wallet was made on this site unlocks it with its password; everyone else signs in their browser wallet.
   const localOwner = typeof window !== "undefined" && storedLocalAddress()?.toLowerCase() === business.owner_address.toLowerCase();
@@ -40,7 +43,38 @@ export default function Withdraw() {
 
   return (
     <div className="space-y-8">
-      <h1 className="h-page">Withdraw</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="h-page">Withdraw</h1>
+        <button className="btn-ghost" onClick={() => (setShowList(!showList), list.reload())}>{showList ? "Hide transactions" : "Transactions"}</button>
+      </div>
+      {showList && (
+        <section className="card space-y-3">
+          <h2 className="h-section">Withdrawals</h2>
+          {list.data?.withdrawals.length ? (
+            <table className="table">
+              <thead>
+                <tr><th>Date</th><th>Amount</th><th>To wallet</th><th></th></tr>
+              </thead>
+              <tbody>
+                {list.data.withdrawals.map((w) => (
+                  <tr key={w.tx_hash}>
+                    <td data-label="Date">{new Date(w.at).toLocaleString([], { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}</td>
+                    <td data-label="Amount"><Money value={w.amount} /></td>
+                    <td data-label="To wallet">
+                      <AddressLink address={w.to_address} />
+                      {w.to_address.toLowerCase() === business.owner_address.toLowerCase() && <span className="text-xs text-ink"> (your wallet)</span>}
+                    </td>
+                    <td className="text-right"><TxLink hash={w.tx_hash} label="View transaction" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-sm text-ink">{list.data ? "No withdrawals yet." : "Loading…"}</p>
+          )}
+          {list.data?.loadingOlder && <p className="text-xs text-ink">Older withdrawals are still being read from Arc and will appear here.</p>}
+        </section>
+      )}
       <section className="card space-y-5">
         <p className="text-sm text-ink">
           You can always take money out of your vault, reserve included. Balance: <b>{vault.balance} USDC</b>.
@@ -103,6 +137,8 @@ export default function Withdraw() {
                     }
                     const hash = await ownerCall(client, vault.address, "withdraw", [getAddress(to), value!]);
                     setDone({ amount: amount.trim(), to: getAddress(to), hash });
+                    // Listed under Transactions straight away (the regular check would also find it).
+                    api("/api/withdrawals", { method: "POST", json: { txHash: hash } }).then(() => list.reload()).catch(() => {});
                     setAmount("");
                     setConfirming(false);
                     await reload();

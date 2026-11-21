@@ -217,3 +217,20 @@ CREATE TABLE IF NOT EXISTS connections (
   last_used_at TIMESTAMPTZ,
   revoked_at TIMESTAMPTZ
 );
+
+-- Money the owner took out of the vault (the vault's Withdrawn events), so the Withdraw page can list them.
+CREATE TABLE IF NOT EXISTS withdrawals (
+  tx_hash TEXT NOT NULL,
+  log_index INT NOT NULL,
+  business_id TEXT NOT NULL REFERENCES businesses(id),
+  to_address TEXT NOT NULL,
+  amount BIGINT NOT NULL,
+  block_number BIGINT NOT NULL,
+  at TIMESTAMPTZ NOT NULL,
+  PRIMARY KEY (tx_hash, log_index)
+);
+CREATE INDEX IF NOT EXISTS idx_withdrawals_business ON withdrawals (business_id, block_number DESC);
+-- How far the chain has been read for withdrawals: forwards (newest) and backwards (older ones, a bit at a time).
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS wd_fwd_block BIGINT;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS wd_back_block BIGINT;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS wd_back_done BOOLEAN NOT NULL DEFAULT false;

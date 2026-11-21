@@ -6,6 +6,7 @@ import { mockDecider } from "./agent/mock-decider";
 import { MOCK } from "./lib/mock";
 import { q } from "./lib/db";
 import { syncIncoming } from "./agent/incoming";
+import { syncWithdrawals } from "./lib/withdrawals";
 import type { Business } from "./lib/session";
 
 /** Money that arrived is looked for every 5 minutes, on its own (no AI, so it's free): an invoice shows as paid
@@ -20,7 +21,10 @@ function startPaymentsTimer() {
     running = true;
     try {
       const rows = await q<Business>("SELECT * FROM businesses WHERE vault_address IS NOT NULL");
-      for (const b of rows) await syncIncoming(b).catch((e) => console.error(new Date().toISOString(), "payments check failed", b.id, e));
+      for (const b of rows) {
+        await syncIncoming(b).catch((e) => console.error(new Date().toISOString(), "payments check failed", b.id, e));
+        await syncWithdrawals(b).catch((e) => console.error(new Date().toISOString(), "withdrawals check failed", b.id, e));
+      }
     } catch (e) {
       console.error(new Date().toISOString(), "payments check failed", e);
     } finally {
