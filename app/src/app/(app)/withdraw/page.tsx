@@ -43,38 +43,7 @@ export default function Withdraw() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="h-page">Withdraw</h1>
-        <button className="btn-ghost" onClick={() => (setShowList(!showList), list.reload())}>{showList ? "Hide transactions" : "Transactions"}</button>
-      </div>
-      {showList && (
-        <section className="card space-y-3">
-          <h2 className="h-section">Withdrawals</h2>
-          {list.data?.withdrawals.length ? (
-            <table className="table">
-              <thead>
-                <tr><th>Date</th><th>Amount</th><th>To wallet</th><th></th></tr>
-              </thead>
-              <tbody>
-                {list.data.withdrawals.map((w) => (
-                  <tr key={w.tx_hash}>
-                    <td data-label="Date">{new Date(w.at).toLocaleString([], { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}</td>
-                    <td data-label="Amount"><Money value={w.amount} /></td>
-                    <td data-label="To wallet">
-                      <AddressLink address={w.to_address} />
-                      {w.to_address.toLowerCase() === business.owner_address.toLowerCase() && <span className="text-xs text-ink"> (your wallet)</span>}
-                    </td>
-                    <td className="text-right"><TxLink hash={w.tx_hash} label="View transaction" /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p className="text-sm text-ink">{list.data ? "No withdrawals yet." : "Loading…"}</p>
-          )}
-          {list.data?.loadingOlder && <p className="text-xs text-ink">Older withdrawals are still being read from Arc and will appear here.</p>}
-        </section>
-      )}
+      <h1 className="h-page">Withdraw</h1>
       <section className="card space-y-5">
         <p className="text-sm text-ink">
           You can always take money out of your vault, reserve included. Balance: <b>{vault.balance} USDC</b>.
@@ -158,6 +127,37 @@ export default function Withdraw() {
           </Notice>
         )}
       </section>
+      <div>
+        <button className="btn-ghost" onClick={() => (setShowList(!showList), list.reload())}>{showList ? "Hide transactions" : "Transactions"}</button>
+      </div>
+      {showList && (
+        <section className="card space-y-3">
+          <h2 className="h-section">Withdrawals</h2>
+          {list.data?.withdrawals.length ? (
+            <table className="table">
+              <thead>
+                <tr><th>Date</th><th>Amount</th><th>To wallet</th><th></th></tr>
+              </thead>
+              <tbody>
+                {list.data.withdrawals.map((w) => (
+                  <tr key={w.tx_hash}>
+                    <td data-label="Date">{new Date(w.at).toLocaleString([], { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}</td>
+                    <td data-label="Amount"><Money value={w.amount} /></td>
+                    <td data-label="To wallet">
+                      <AddressLink address={w.to_address} />
+                      {w.to_address.toLowerCase() === business.owner_address.toLowerCase() && <span className="text-xs text-ink"> (your wallet)</span>}
+                    </td>
+                    <td className="text-right"><TxLink hash={w.tx_hash} label="View transaction" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-sm text-ink">{list.data ? "No withdrawals yet." : "Loading…"}</p>
+          )}
+          {list.data?.loadingOlder && <p className="text-xs text-ink">Older withdrawals are still being read from Arc and will appear here.</p>}
+        </section>
+      )}
     </div>
   );
 }
