@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Wordmark } from "@/components/mark";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://bursar.myacxt.site"),
+  metadataBase: new URL(process.env.NEW_ORIGIN || "https://bursar.me"),
   title: "Bursar Whitepaper",
   description: "How Bursar runs a small business's money in USDC on Arc: the agent decides, the vault has the final say.",
   openGraph: { title: "Bursar Whitepaper", images: ["/whitepaper-pages/page-01.jpg"] },
